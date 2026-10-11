@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React, { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { QueryClient } from '@tanstack/react-query'
@@ -14,6 +14,8 @@ import { DriversPage, TeamsPage } from '@/pages/Placeholders'
 import { TestDashboardV1 } from '@/pages/TestDashboardV1'
 import { TestDashboardV2 } from '@/pages/TestDashboardV2'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+
+const RaceWeekendPage = lazy(() => import('@/pages/RaceWeekendPage'))
 
 // Configure TanStack Query with 24h cache persistence in localStorage
 const queryClient = new QueryClient({
@@ -83,6 +85,8 @@ export const App: React.FC = () => {
                   <Route path="/test/dashboard" element={<TestDashboardV2 />} />
                   <Route path="/test/dashboard/v1" element={<TestDashboardV1 />} />
                   <Route path="/test/dashboard/v2" element={<TestDashboardV2 />} />
+                  <Route path="/test/raceweekend" element={<RaceWeekendPage />} />
+                  <Route path="/test/raceweekend/:round" element={<RaceWeekendPage />} />
                   <Route path="*" element={
                     <Layout>
                       <AnimatedRoutes />

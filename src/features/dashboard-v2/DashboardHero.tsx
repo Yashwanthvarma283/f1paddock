@@ -7,9 +7,8 @@ import { CountryFlag } from '@/lib/flags'
 import { Countdown } from './Countdown'
 import { PrimaryButton, Fact, QuietError, EmptyNote, orDash } from './primitives'
 import { cn } from '@/lib/utils'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { CircuitOutline } from '@/features/hero/CircuitOutline'
-import { formatTimeInZone } from '@/lib/timezone'
 import { useNow } from '@/hooks/useNow'
 
 export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
@@ -143,7 +142,7 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.4 }}
             >
-              <Link to={`/race/${nextRace.round}`}>
+              <Link to={`/test/raceweekend/${nextRace.round}`} viewTransition>
                 <PrimaryButton>View race weekend</PrimaryButton>
               </Link>
             </motion.div>
@@ -170,7 +169,7 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
                 Weekend Schedule ({tz.timezoneAbbr})
               </div>
               <ul className="flex flex-col">
-                {weekendSessions.map((session, i) => {
+                {weekendSessions.map((session) => {
                   const isPast = session.isFinished
                   const isActive = session.isLive
                   return (

@@ -4,6 +4,7 @@ import {
   LastRaceResultPayload,
   DriverStandingItem,
   ConstructorStandingItem,
+  RaceResultPayload,
 } from './types'
 import { sanitizeRaceName } from '../lib/circuits'
 
@@ -57,7 +58,7 @@ class JolpicaClient {
   /**
    * Fetches official race classification for a specific season and round.
    */
-  async getRaceResults(season: string | number, round: string | number): Promise<any | null> {
+  async getRaceResults(season: string | number, round: string | number): Promise<RaceResultPayload | null> {
     try {
       const data = await this.request<any>(`/${season}/${round}/results.json`)
       const race = data?.MRData?.RaceTable?.Races?.[0]

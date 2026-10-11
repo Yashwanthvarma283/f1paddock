@@ -105,6 +105,16 @@ export interface LastRaceResultPayload {
   fastestLap?: F1ResultItem
 }
 
+export interface RaceResultPayload {
+  season: string
+  round: string
+  raceName: string
+  Circuit: F1Circuit
+  date: string
+  time?: string
+  Results: F1ResultItem[]
+}
+
 export interface DriverStandingItem {
   position: number
   points: number
