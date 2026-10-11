@@ -51,7 +51,7 @@ const Unit: React.FC<{ value: number; unit: string; large?: boolean }> = ({
     <span
       className={cn(
         'dv2-fig font-semibold text-[var(--text)] inline-flex',
-        large ? 'text-[36px] md:text-[48px] leading-none' : 'text-[28px] md:text-[34px] leading-none'
+        large ? 'text-[32px] md:text-[40px] leading-none' : 'text-[24px] md:text-[30px] leading-none'
       )}
     >
       <RollingNumber value={value} />
@@ -71,26 +71,50 @@ const Unit: React.FC<{ value: number; unit: string; large?: boolean }> = ({
 export const Countdown: React.FC<{
   targetIso: string | null
   label: string
-}> = ({ targetIso, label }) => {
+  isLive?: boolean
+  onExpire?: () => void
+}> = ({ targetIso, label, isLive = false, onExpire }) => {
   const [state, setState] = useState<CountdownState | null>(() =>
     targetIso ? SessionService.calculateCountdown(targetIso) : null
   )
+  const [prevTargetIso, setPrevTargetIso] = useState(targetIso)
+  if (prevTargetIso !== targetIso) {
+    setPrevTargetIso(targetIso)
+    setState(targetIso ? SessionService.calculateCountdown(targetIso) : null)
+  }
+
+  const onExpireRef = React.useRef(onExpire)
+  const hasExpiredRef = React.useRef(false)
 
   useEffect(() => {
-    if (!targetIso) {
-      setState(null)
-      return
+    onExpireRef.current = onExpire
+  }, [onExpire])
+
+  useEffect(() => {
+    hasExpiredRef.current = false
+    if (!targetIso) return
+
+    const initial = SessionService.calculateCountdown(targetIso)
+    if (initial.isExpired) {
+      hasExpiredRef.current = true
+      onExpireRef.current?.()
     }
 
-    setState(SessionService.calculateCountdown(targetIso))
     const id = window.setInterval(() => {
-      setState(SessionService.calculateCountdown(targetIso))
+      const next = SessionService.calculateCountdown(targetIso)
+      setState(next)
+      if (next.isExpired && !hasExpiredRef.current) {
+        hasExpiredRef.current = true
+        onExpireRef.current?.()
+      }
     }, 1000)
 
     return () => window.clearInterval(id)
   }, [targetIso])
 
-  const spokenLabel = state && !state.isExpired
+  const spokenLabel = isLive
+    ? `${label} is currently live`
+    : state && !state.isExpired
     ? `${label} in ${state.days} days, ${state.hours} hours, ${state.minutes} minutes`
     : label
 
@@ -100,9 +124,14 @@ export const Countdown: React.FC<{
         {label}
       </div>
 
-      <div aria-label={spokenLabel} className="h-[48px]">
-        {!state || state.isExpired ? (
-          <span className="dv2-fig text-[36px] md:text-[48px] font-semibold leading-none text-[var(--text)]">
+      <div aria-label={spokenLabel} className="h-[40px] md:h-[44px] flex items-center">
+        {isLive ? (
+          <div className="flex items-center gap-2 text-[var(--accent)] font-extrabold text-[24px] md:text-[28px] tracking-tight animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+            <span>LIVE</span>
+          </div>
+        ) : !state || state.isExpired ? (
+          <span className="dv2-fig text-[32px] md:text-[40px] font-semibold leading-none text-[var(--text)]">
             —
           </span>
         ) : (

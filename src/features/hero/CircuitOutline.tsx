@@ -334,8 +334,8 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
   // Parse viewBox so we can map SVG coordinates to HTML % percentages
   const [vbMinX, vbMinY, vbWidth, vbHeight] = (info.viewBox || "0 0 1000 1000").split(' ').map(Number);
 
-  const baseTrackOpacity = is3D ? 0.08 : 1
-  const sectorOpacity = is3D ? 0.2 : 1
+  const baseTrackOpacity = is3D ? 0.22 : 1
+  const sectorOpacity = is3D ? 0.65 : 1
   
   const LIFT_HEIGHT = 45; // The active sector raises to Z=45px
 
@@ -348,10 +348,12 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
     return Array.from({ length: numLayers }).map((_, i) => {
       const isTop = i === numLayers - 1;
       let opacity = 0;
-      if (isActive) {
-        opacity = isTop ? 0.4 : 0.025; 
+      if (shouldReduceMotion) {
+        opacity = isTop ? 0.75 : 0.06;
+      } else if (isActive) {
+        opacity = isTop ? 0.95 : 0.12; 
       } else {
-        opacity = isTop ? 0.15 : 0;
+        opacity = isTop ? 0.55 : 0.04;
       }
       
       const createPath = (s: number, e: number, keySuffix: string) => {
@@ -362,7 +364,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
               key={keySuffix}
               d={info.path}
               stroke={color}
-              strokeWidth="4"
+              strokeWidth={isTop && isActive ? "5" : "4"}
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeDasharray={`${len} ${pathLength}`}
@@ -379,7 +381,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
           key={i}
           className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ 
-            transform: isActive ? `translateZ(${i * layerSpacing}px)` : 'translateZ(0px)', 
+            transform: (isActive || shouldReduceMotion) ? `translateZ(${i * layerSpacing}px)` : 'translateZ(0px)', 
             transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', 
             transformStyle: 'preserve-3d' 
           }}
@@ -521,20 +523,15 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
                 const px = turn.pillX ?? turn.x
                 const py = turn.pillY ?? turn.y
                 const hasOffset = turn.pillX !== undefined && turn.pillY !== undefined
-                
-                let isVisible = true
-                if (is3D) {
-                  isVisible = activeTurn?.number === turn.number
-                }
 
                 return (
                   <motion.g
                     key={turn.number}
                     className={is3D ? "" : "cursor-pointer"}
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: isVisible ? 1 : 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{
-                      delay: is3D ? 0 : 1.4 + idx * 0.02,
+                      delay: is3D ? 0.2 + idx * 0.015 : 1.4 + idx * 0.02,
                       duration: 0.25,
                     }}
                     onMouseEnter={() => !is3D && setActiveTurn(turn)}
@@ -543,7 +540,19 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
                     {hasOffset && (
                       <line x1={turn.x} y1={turn.y} x2={px} y2={py} stroke={sectorColor} strokeWidth="1" strokeDasharray="2 2" opacity={isHovered ? 0.9 : 0.5} />
                     )}
-                    <circle cx={turn.x} cy={turn.y} r={isHovered ? 3.5 : 2.5} fill={sectorColor} stroke="var(--surface-1)" strokeWidth="1" className="transition-all duration-150" />
+                    {is3D && isHovered && (
+                      <circle cx={turn.x} cy={turn.y} r="8" fill="none" stroke={sectorColor} strokeWidth="1.5" opacity="0.8" />
+                    )}
+                    <circle
+                      cx={turn.x}
+                      cy={turn.y}
+                      r={isHovered ? 4.5 : 2.75}
+                      fill={sectorColor}
+                      stroke="var(--surface-1)"
+                      strokeWidth={isHovered ? 2 : 1}
+                      opacity={isHovered ? 1 : 0.85}
+                      className="transition-all duration-150"
+                    />
                     
                     {!is3D && (
                       <g>
@@ -582,29 +591,56 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
         {is3D && (
           <div className="absolute inset-0 z-20 pointer-events-none">
             {snappedTurns.map((turn) => {
-              const isVisible = activeTurn?.number === turn.number;
+              const isActive = activeTurn?.number === turn.number;
               const sectorColor = turn.sector === 1 ? 'var(--timing-purple)' : turn.sector === 2 ? 'var(--timing-green)' : 'var(--timing-yellow)';
-
               const isDoubleDigit = turn.number >= 10;
+
               return (
-                <motion.div
+                <div
                   key={turn.number}
                   ref={el => { overlayPillsRef.current[turn.number] = el; }}
-                  className="absolute flex items-center justify-center font-mono font-bold text-[13px] text-white bg-[#0B0B0F] rounded-[5px] pointer-events-none shadow-sm"
+                  className={cn(
+                    "absolute flex items-center justify-center font-mono font-bold rounded-[3px] pointer-events-none transition-all duration-150",
+                    isActive
+                      ? "z-30 text-[12px] text-white bg-[#0B0B0F] shadow-lg scale-125"
+                      : "z-10 text-[10px] text-white/90 bg-[#0B0B0F]/85 shadow-sm"
+                  )}
                   style={{
-                    width: isDoubleDigit ? 26 : 22,
-                    height: 20,
-                    border: `2px solid ${sectorColor}`,
-                    transform: `translate(-50%, -50%)`, // Center precisely on the anchor dot
+                    width: isDoubleDigit ? (isActive ? 25 : 21) : (isActive ? 21 : 18),
+                    height: isActive ? 19 : 15,
+                    border: isActive ? `2px solid ${sectorColor}` : `1px solid ${sectorColor}`,
+                    boxShadow: isActive ? `0 0 10px ${sectorColor}` : undefined,
+                    transform: `translate(-50%, -50%)`,
+                    opacity: sectorsVisible ? (isActive ? 1 : 0.78) : 0,
                   }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isVisible ? 1 : 0 }}
-                  transition={{ duration: 0.15 }}
                 >
                   {turn.number}
-                </motion.div>
+                </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Floating Sector Telemetry Legend in Hero 3D */}
+        {is3D && (
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-4 z-20 flex items-center gap-2 sm:gap-2.5 px-2.5 py-1 rounded-[4px] bg-[var(--surface-1)]/85 border border-[var(--border)] backdrop-blur-md text-[10px] sm:text-[11px] font-mono font-semibold uppercase tracking-wider shadow-sm pointer-events-none">
+            <span className={cn("flex items-center gap-1 transition-opacity", (heroStage === 1 || shouldReduceMotion) ? "text-[var(--timing-purple)] opacity-100 font-bold" : "text-[var(--timing-purple)] opacity-60")}>
+              <span className={cn("w-1.5 h-1.5 rounded-full bg-[var(--timing-purple)]", heroStage === 1 && !shouldReduceMotion && "animate-pulse")} />
+              S1
+            </span>
+            <span className={cn("flex items-center gap-1 transition-opacity", (heroStage === 2 || shouldReduceMotion) ? "text-[var(--timing-green)] opacity-100 font-bold" : "text-[var(--timing-green)] opacity-60")}>
+              <span className={cn("w-1.5 h-1.5 rounded-full bg-[var(--timing-green)]", heroStage === 2 && !shouldReduceMotion && "animate-pulse")} />
+              S2
+            </span>
+            <span className={cn("flex items-center gap-1 transition-opacity", (heroStage === 3 || shouldReduceMotion) ? "text-[var(--timing-yellow)] opacity-100 font-bold" : "text-[var(--timing-yellow)] opacity-60")}>
+              <span className={cn("w-1.5 h-1.5 rounded-full bg-[var(--timing-yellow)]", heroStage === 3 && !shouldReduceMotion && "animate-pulse")} />
+              S3
+            </span>
+            {activeTurn && (
+              <span className="hidden sm:inline pl-1.5 border-l border-[var(--border)] text-[var(--text)] font-bold">
+                T{activeTurn.number}
+              </span>
+            )}
           </div>
         )}
       </div>

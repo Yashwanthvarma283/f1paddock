@@ -56,8 +56,8 @@ export const SectionHeading: React.FC<{
   action?: React.ReactNode
   id?: string
 }> = ({ subtitle, children, action, id }) => (
-  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-0 pb-6 mb-6 sticky top-16 z-30 bg-[var(--bg)] border-b border-[var(--border-subtle)] -mx-5 px-5 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
-    <div className="flex items-center gap-4">
+  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-4 pb-6 mb-6 sticky top-16 z-30 bg-[var(--bg)] border-b border-[var(--border-subtle)] -mx-5 px-5 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
+    <div className="flex items-center gap-3 sm:gap-4">
       <div className="flex flex-col">
         {subtitle && (
           <span className="text-[13px] font-semibold text-[var(--accent)] uppercase tracking-widest mb-1">
@@ -230,7 +230,7 @@ export const Section: React.FC<{
       <section
         id={id}
         aria-labelledby={labelledBy}
-        className={cn("scroll-mt-[128px]", className)}
+        className={cn("scroll-mt-[80px]", className)}
         style={{ opacity: 1, transform: 'none' }}
       >
         {children}
@@ -242,13 +242,14 @@ export const Section: React.FC<{
     <motion.section
       id={id}
       aria-labelledby={labelledBy}
-      className={cn("scroll-mt-[128px]", className)}
-      initial={{ opacity: 0, y: 20 }}
-      animate={isVisible ? { opacity: 1, y: 0 } : undefined}
-      whileInView={{ opacity: 1, y: 0 }}
+      className={cn("scroll-mt-[80px]", className)}
+      initial={{ opacity: 0 }}
+      animate={isVisible ? { opacity: 1 } : undefined}
+      whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: "0px" }}
       onViewportEnter={() => setIsVisible(true)}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      style={{ transform: 'none' }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
     >
       {children}
     </motion.section>

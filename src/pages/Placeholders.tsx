@@ -15,7 +15,7 @@ const BasePlaceholder: React.FC<PlaceholderPageProps> = ({ title, subtitle, icon
     <div className="py-20 max-w-4xl mx-auto px-4 sm:px-6">
       <Link to="/" className="inline-block mb-8">
         <Button variant="outline" size="sm" icon={<ArrowLeft className="w-4 h-4" />}>
-          Back to PitWall Home
+          Back to F1 Paddock Home
         </Button>
       </Link>
 

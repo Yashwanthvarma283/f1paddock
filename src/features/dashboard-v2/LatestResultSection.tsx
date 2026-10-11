@@ -2,6 +2,7 @@ import React from 'react'
 import { useLastRaceResult } from '@/api/useF1Data'
 import { getTeamMeta } from '@/lib/teams'
 import { Section, SectionHeading, RowSkeleton, QuietError, Figure, Label, EMPTY } from './primitives'
+import { CountUp } from './CountUp'
 import { cn } from '@/lib/utils'
 import { motion, useReducedMotion } from 'motion/react'
 import { DriverAvatar } from './DriverAvatar'
@@ -131,7 +132,7 @@ export const LatestResultSection: React.FC<{ id?: string }> = ({ id }) => {
         Using display: contents on lg breakpoint to flatten the DOM structure 
         so we can control mobile ordering (flex flex-col) versus desktop (grid).
         Desktop order: Left (Podium, Table), Right (Standings).
-        Mobile order: Podium, Standings, Table. 
+        Mobile order: Podium, Table (Driver Pos), Standings. 
       */}
       <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:mt-8 relative">
         
@@ -144,13 +145,8 @@ export const LatestResultSection: React.FC<{ id?: string }> = ({ id }) => {
           </div>
         </div>
 
-        {/* Standings - order 2 on mobile, spans 5 cols on desktop (right col) */}
-        <div className="order-2 lg:order-none lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 flex flex-col">
-          <StandingsSection />
-        </div>
-
-        {/* Classification Table - order 3 on mobile, spans 7 cols on desktop (left col) */}
-        <div className="order-3 lg:order-none lg:col-span-7 lg:col-start-1 lg:row-start-2 flex flex-col mt-4 lg:mt-0">
+        {/* Classification Table (Driver Pos) - order 2 on mobile, spans 7 cols on desktop (left col) */}
+        <div className="order-2 lg:order-none lg:col-span-7 lg:col-start-1 lg:row-start-2 flex flex-col mt-4 lg:mt-0">
           <div className="border-t border-[var(--border-subtle)]">
             <div className="flex items-center px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]">
               <Label className="w-8">Pos</Label>
@@ -160,7 +156,7 @@ export const LatestResultSection: React.FC<{ id?: string }> = ({ id }) => {
             </div>
             
             <div className="divide-y divide-[var(--border-subtle)] flex flex-col">
-              {p4to10.map((item, idx) => {
+              {p4to10.map((item) => {
                 const teamMeta = getTeamMeta(item.Constructor.constructorId)
                 
                 return (
@@ -203,7 +199,7 @@ export const LatestResultSection: React.FC<{ id?: string }> = ({ id }) => {
                     
                     <div className="w-10 sm:w-12 text-right ml-3 sm:ml-4 shrink-0">
                       <Figure className="text-[14px] sm:text-[15px] font-bold">
-                        {item.points}
+                        <CountUp value={item.points} className="text-[14px] sm:text-[15px] font-bold" />
                       </Figure>
                     </div>
                   </div>
@@ -211,6 +207,11 @@ export const LatestResultSection: React.FC<{ id?: string }> = ({ id }) => {
               })}
             </div>
           </div>
+        </div>
+
+        {/* Standings - order 3 on mobile, spans 5 cols on desktop (right col) */}
+        <div className="order-3 lg:order-none lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 flex flex-col mt-4 lg:mt-0">
+          <StandingsSection />
         </div>
 
       </div>

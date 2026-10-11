@@ -45,7 +45,7 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
   const dates = nextRace.date ? tz.formatWeekendSpan(SessionService.parseSessionIso(nextRace.date, nextRace.time) || nextRace.date) : null
 
   return (
-    <section id={id} className="w-full bg-[var(--dv2-hero-bg)] text-[var(--dv2-hero-text)] border-b border-[var(--border-subtle)] pb-12 pt-12 md:pt-16 lg:pt-24">
+    <section id={id} className="w-full bg-[var(--dv2-hero-bg)] text-[var(--dv2-hero-text)] border-b border-[var(--border-subtle)] pb-14 md:pb-16 pt-14 md:pt-18 lg:pt-24">
       <div className="max-w-[1560px] mx-auto px-5 md:px-8 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
           

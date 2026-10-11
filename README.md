@@ -1,4 +1,4 @@
-# PitWall — Formula 1 Telemetry Dashboard
+# F1 Paddock — Formula 1 Live Race Hub & Telemetry (`f1paddock.live`)
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.x-61dafb.svg)](https://react.dev/)
@@ -6,7 +6,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-38bdf8.svg)](https://tailwindcss.com/)
 [![WCAG AA](https://img.shields.io/badge/WCAG_AA-Passing-success.svg)](https://www.w3.org/WAI/WCAG21/quickref/)
 
-**PitWall** is a Formula 1 fan telemetry dashboard. Built with modern React, Tailwind CSS v4, and Framer Motion, it delivers session countdowns, circuit geometry telemetry, championship standings, and season archives.
+**F1 Paddock** ([f1paddock.live](https://f1paddock.live)) is a Formula 1 fan telemetry and live race dashboard. Built with modern React, Tailwind CSS v4, and Framer Motion, it delivers session countdowns, circuit geometry telemetry, championship standings, and season archives.
 
 ---
 

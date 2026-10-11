@@ -104,7 +104,7 @@ export const HeroNextRace: React.FC<HeroNextRaceProps> = ({
   const raceId = `${race.season}-${race.round}`
 
   return (
-    <section className="relative pt-6 pb-12 sm:pb-16 border-b border-[var(--border)] bg-[var(--surface-1)]">
+    <section className="relative pt-12 sm:pt-16 pb-16 sm:pb-20 border-b border-[var(--border)] bg-[var(--surface-1)]">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
         {/* Live or Replay banner if active */}
         <div className="mb-4">

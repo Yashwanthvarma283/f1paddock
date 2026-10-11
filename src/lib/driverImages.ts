@@ -14,18 +14,22 @@ export const driverHeadshots: Record<string, string> = {
   "gasly": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/P/PIEGAS01_Pierre_Gasly/piegas01.png.transform/1col/image.png",
   "bottas": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/1col/image.png",
   "albon": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ALEALB01_Alexander_Albon/alealb01.png.transform/1col/image.png",
-  "tsunoda": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/1col/image.png"
+  "tsunoda": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/1col/image.png",
+  "antonelli": "/drivers/antonelli.png",
+  "hadjar": "/drivers/hadjar.png",
+  "lawson": "/drivers/lawson.png",
+  "arvid_lindblad": "/drivers/arvid_lindblad.png",
+  "colapinto": "/drivers/colapinto.png",
+  "bearman": "/drivers/bearman.png",
+  "bortoleto": "/drivers/bortoleto.png",
+  "arvid": "/drivers/arvid_lindblad.png",
+  "lindblad": "/drivers/arvid_lindblad.png",
+  "kimi_antonelli": "/drivers/antonelli.png",
+  "andrea_kimi_antonelli": "/drivers/antonelli.png",
+  "colopinto": "/drivers/colapinto.png"
 }
 
-export const missingPhotos = [
-  "antonelli",
-  "hadjar",
-  "lawson",
-  "arvid_lindblad",
-  "colapinto",
-  "bearman",
-  "bortoleto"
-]
+export const missingPhotos: string[] = []
 
 export function getDriverImage(driverId: string): string | undefined {
   if (!driverId) return undefined

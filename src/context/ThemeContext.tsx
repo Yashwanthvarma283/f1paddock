@@ -10,14 +10,15 @@ interface ThemeContextValue {
   setTheme: (theme: Theme, event?: React.MouseEvent) => void
 }
 
-const STORAGE_KEY = 'pitwall_theme_mode'
+const STORAGE_KEY = 'f1paddock_theme_mode'
+const LEGACY_STORAGE_KEY = 'pitwall_theme_mode'
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'dark'
-    const stored = appStorage.getItem<Theme | null>(STORAGE_KEY, null)
+    const stored = appStorage.getItem<Theme | null>(STORAGE_KEY, null) ?? appStorage.getItem<Theme | null>(LEGACY_STORAGE_KEY, null)
     if (stored === 'dark' || stored === 'light') {
       return stored
     }
@@ -38,6 +39,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.classList.remove('dark')
     }
     appStorage.setItem(STORAGE_KEY, newTheme)
+    appStorage.setItem(LEGACY_STORAGE_KEY, newTheme)
   }, [])
 
   useEffect(() => {

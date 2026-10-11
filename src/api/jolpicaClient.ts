@@ -7,6 +7,7 @@ import {
   RaceResultPayload,
 } from './types'
 import { sanitizeRaceName } from '../lib/circuits'
+import { selectPreviousEdition, type CircuitPreviousEdition } from './circuitPreviousEdition'
 
 const BASE_URL = 'https://api.jolpi.ca/ergast/f1'
 
@@ -183,6 +184,24 @@ class JolpicaClient {
     } catch {
       const currentYear = new Date().getFullYear()
       return Array.from({ length: 7 }, (_, i) => String(currentYear - i))
+    }
+  }
+
+  /**
+   * Fetches the previous completed edition at a circuit prior to current/active season.
+   */
+  async getCircuitPreviousEdition(
+    circuitId: string,
+    currentSeason: number | string = new Date().getFullYear()
+  ): Promise<CircuitPreviousEdition | null> {
+    if (!circuitId) return null
+    try {
+      const data = await this.request<any>(`/circuits/${circuitId}/results/1.json?limit=100`)
+      const races = data?.MRData?.RaceTable?.Races || []
+      return selectPreviousEdition(races, currentSeason)
+    } catch (e) {
+      console.warn(`JolpicaClient: Failed to fetch previous edition for ${circuitId}:`, e)
+      return null
     }
   }
 }

@@ -69,19 +69,19 @@ export const TopBar: React.FC = () => {
               to="/"
               className="group flex items-center gap-2.5 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded"
             >
-              {/* PitWall Emblem with F1 Skew Cut */}
+              {/* F1 Paddock Emblem with F1 Skew Cut */}
               <div className="f1-skew w-8 h-8 rounded-sm bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center relative overflow-hidden group-hover:border-[var(--accent)] transition-colors shadow-xs">
                 <div className="absolute top-0 left-0 w-1 h-full bg-[var(--accent)]" />
-                <span className="f1-unskew font-display font-black text-sm tracking-tighter text-[var(--text)] pl-1">
-                  PW
+                <span className="f1-unskew font-display font-black text-xs tracking-tighter text-[var(--text)] pl-1">
+                  F1P
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="font-display font-black text-xl uppercase tracking-tight leading-none text-[var(--text)] flex items-center gap-1">
-                  Pit<span className="text-[var(--accent-text)]">Wall</span>
+                <span className="font-display font-black text-xl uppercase tracking-tight leading-none text-[var(--text)] flex items-center gap-1.5">
+                  F1 <span className="text-[var(--accent-text)]">Paddock</span>
                 </span>
                 <span className="text-[9px] font-mono tracking-widest uppercase text-[var(--text-muted)] leading-none mt-0.5">
-                  F1 Telemetry Hub
+                  f1paddock.live
                 </span>
               </div>
             </Link>

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useDriverStandings, useConstructorStandings, useLastRaceResult } from '@/api/useF1Data'
 import { getTeamMeta } from '@/lib/teams'
 import { RowSkeleton, QuietError, Figure, Label } from './primitives'
+import { CountUp } from './CountUp'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'motion/react'
 import { Link } from 'react-router-dom'
@@ -43,8 +44,13 @@ export const StandingsSection: React.FC<{ id?: string }> = ({ id }) => {
   }
 
   return (
-    <div id={id || 'standings'} className="w-full h-full flex flex-col">
-      <div className="flex justify-start mb-6 lg:mt-2">
+    <div id={id || 'standings'} className="w-full h-full flex flex-col scroll-mt-[80px]">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 lg:mt-2">
+        <div className="flex items-center gap-3">
+          <h3 className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-tight text-[18px] md:text-[20px] text-[var(--text)]">
+            Standings
+          </h3>
+        </div>
         <div className="flex bg-[var(--surface-1)] p-1 rounded-full border border-[var(--border-subtle)] relative">
           {(['drivers', 'constructors'] as const).map((t) => (
             <button
@@ -164,13 +170,15 @@ export const StandingsSection: React.FC<{ id?: string }> = ({ id }) => {
                     
                     <div className="w-16 text-right hidden sm:block relative z-10">
                       <Figure className="text-[13px] text-[var(--text-muted)]">
-                        {gap > 0 ? `-${gap}` : '-'}
+                        {gap > 0 ? (
+                          <CountUp value={gap} prefix="-" className="text-[13px] text-[var(--text-muted)]" />
+                        ) : '-'}
                       </Figure>
                     </div>
                     
                     <div className="w-16 text-right ml-4 relative z-10">
                       <Figure className="text-[15px] font-bold">
-                        {item.points}
+                        <CountUp value={item.points} className="text-[15px] font-bold" />
                       </Figure>
                     </div>
                   </motion.div>

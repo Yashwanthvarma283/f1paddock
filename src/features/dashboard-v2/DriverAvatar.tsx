@@ -15,15 +15,22 @@ interface DriverAvatarProps {
 }
 
 export const DriverAvatar: React.FC<DriverAvatarProps> = ({ driverId, code, givenName, familyName, className, fallbackClassName, width, height, style }) => {
+  const primaryUrl = getDriverImage(driverId) || `/drivers/${driverId}.png`
   const localUrl = `/drivers/${driverId}.png`
-  const remoteUrl = getDriverImage(driverId)
   
-  const [src, setSrc] = useState<string | undefined>(localUrl)
+  const [src, setSrc] = useState<string | undefined>(primaryUrl)
   const [hasError, setHasError] = useState(false)
 
+  React.useEffect(() => {
+    setHasError(false)
+    const currentPrimary = getDriverImage(driverId) || `/drivers/${driverId}.png`
+    setSrc(currentPrimary)
+  }, [driverId])
+
   const handleError = () => {
-    if (src === localUrl && remoteUrl) {
-      setSrc(remoteUrl)
+    // If primary was remote or different and local exists, try localUrl
+    if (src !== localUrl) {
+      setSrc(localUrl)
     } else {
       setHasError(true)
       setSrc(undefined)

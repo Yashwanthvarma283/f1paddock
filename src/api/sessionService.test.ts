@@ -61,4 +61,40 @@ describe('SessionService', () => {
     expect(countdown.isExpired).toBe(true)
     expect(countdown.totalSeconds).toBe(0)
   })
+
+  it('immediately advances next race when a round has completed', () => {
+    const races: F1Race[] = [
+      {
+        ...mockSprintRace,
+        round: '16',
+        raceName: 'Italian Grand Prix',
+        date: '2026-09-06',
+        time: '13:00:00Z',
+      },
+      {
+        ...mockSprintRace,
+        round: '17',
+        raceName: 'Singapore Grand Prix',
+        date: '2026-10-11',
+        time: '12:00:00Z',
+      },
+      {
+        ...mockSprintRace,
+        round: '18',
+        raceName: 'United States Grand Prix',
+        date: '2026-10-25',
+        time: '19:00:00Z',
+      },
+    ]
+
+    // When round 16 was officially completed:
+    const next1 = SessionService.findNextRace(races, new Date('2026-09-06T16:00:00Z'), '16')
+    expect(next1?.round).toBe('17')
+    expect(next1?.raceName).toBe('Singapore Grand Prix')
+
+    // When round 17 was officially completed immediately after race:
+    const next2 = SessionService.findNextRace(races, new Date('2026-10-11T14:30:00Z'), 17)
+    expect(next2?.round).toBe('18')
+    expect(next2?.raceName).toBe('United States Grand Prix')
+  })
 })

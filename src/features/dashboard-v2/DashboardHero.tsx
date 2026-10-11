@@ -1,7 +1,9 @@
-import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useCallback } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { flushSync } from 'react-dom'
-import { useSchedule } from '@/api/useF1Data'
+import { useQueryClient } from '@tanstack/react-query'
+import { useSchedule, useCircuitPreviousEdition, useLastRaceResult, useLiveStatus } from '@/api/useF1Data'
+import { CIRCUITS, getCircuitInfo } from '@/lib/circuits'
 import { SessionService } from '@/api/sessionService'
 import { useTimezone } from '@/context/TimezoneContext'
 import { CountryFlag } from '@/lib/flags'
@@ -14,9 +16,35 @@ import { useNow } from '@/hooks/useNow'
 
 export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
   const { data: schedule, isLoading, isError, refetch } = useSchedule()
+  const { data: lastRaceResult } = useLastRaceResult()
   const tz = useTimezone()
-  const now = useNow()
+  const now = useNow(10000)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
+  const roundOverride = searchParams.get('round')
+
+  const lastCompletedRound = lastRaceResult?.round ? Number(lastRaceResult.round) : undefined
+  const defaultNextRace = schedule?.races
+    ? SessionService.findNextRace(schedule.races, now, lastCompletedRound)
+    : null
+  const nextRaceCandidate = (roundOverride && schedule?.races)
+    ? (schedule.races.find((r) => String(r.round) === roundOverride) || defaultNextRace)
+    : defaultNextRace
+  const circuitId = nextRaceCandidate?.Circuit?.circuitId
+  const { data: prevEdition } = useCircuitPreviousEdition(circuitId, nextRaceCandidate?.season)
+  const circuitInfo = getCircuitInfo(circuitId, nextRaceCandidate?.Circuit?.circuitName)
+  const trackLength = circuitInfo?.lengthKm || (circuitId && CIRCUITS[circuitId]?.lengthKm ? CIRCUITS[circuitId].lengthKm : null)
+  
+  const { data: liveStatus } = useLiveStatus(
+    nextRaceCandidate?.Circuit?.circuitName,
+    nextRaceCandidate?.Circuit?.Location?.country
+  )
+
+  const handleExpire = useCallback(() => {
+    refetch()
+    queryClient.invalidateQueries({ queryKey: ['f1'] })
+  }, [refetch, queryClient])
   
   if (isLoading) {
     return (
@@ -34,7 +62,7 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
     )
   }
   
-  const nextRace = SessionService.findNextRace(schedule.races)
+  const nextRace = nextRaceCandidate
   
   if (!nextRace) {
     return (
@@ -44,9 +72,10 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
     )
   }
   
-  const weekendSessions = SessionService.extractWeekendSessions(nextRace)
-  const nextSession = SessionService.getNextUpcomingSession(weekendSessions)
+  const weekendSessions = SessionService.extractWeekendSessions(nextRace, now)
+  const nextSession = SessionService.getNextUpcomingSession(weekendSessions, now)
   const countdownTarget = nextSession?.startTimeIso || null
+  const isSessionLive = Boolean(nextSession?.isLive || liveStatus?.isLive)
   
   // Custom dates format using weekendSessions to avoid the -48hr bug
   let dates = null
@@ -101,48 +130,51 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
   }
 
   return (
-    <section id={id} className="relative w-full bg-[var(--bg)] text-[var(--text)] border-b border-[var(--border-subtle)] pt-[43px] md:pt-[51px] lg:pt-[75px] pb-0 overflow-hidden">
+    <section id={id} className="relative w-full bg-[var(--bg)] text-[var(--text)] border-b border-[var(--border-subtle)] pt-14 md:pt-18 lg:pt-20 pb-10 md:pb-12 lg:pb-14 overflow-hidden scroll-mt-[128px]">
       {/* Background Circuit Outline */}
       <div className="absolute inset-0 z-0 pointer-events-none w-full h-full flex items-center justify-center md:pr-[10%] lg:pr-[14%] pb-12 md:pb-20">
-        <CircuitOutline circuitId={nextRace.Circuit?.circuitId} variant="hero-3d" className="w-[85%] h-[85%] md:w-[60%] md:h-[60%] text-[var(--text)] object-contain" />
+        <CircuitOutline circuitId={nextRace.Circuit?.circuitId} circuitName={nextRace.Circuit?.circuitName} variant="hero-3d" className="w-[85%] h-[85%] md:w-[60%] md:h-[60%] text-[var(--text)] object-contain" />
       </div>
 
       <div className="relative z-10 max-w-[1560px] mx-auto px-5 md:px-8 lg:px-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-start">
           
           {/* Main Info */}
-          <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-center">
+          <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
             
             {/* Fact Strip */}
             <motion.div 
-              className="flex flex-wrap gap-6 mb-8 text-[12px] font-semibold tracking-wider uppercase text-[var(--text-muted)]"
+              className="flex items-center gap-4 mb-6 md:mb-7 text-[12px] font-semibold tracking-wider uppercase text-[var(--text-muted)]"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.4 }}
             >
-              <span>Round {nextRace.round} / {schedule.races.length}</span>
-              <span className="hidden sm:inline text-[var(--border-subtle)] opacity-30">•</span>
-              <span>{daysLabel}</span>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                <span>Round {nextRace.round} / {schedule.races.length}</span>
+                <span className="hidden sm:inline text-[var(--border-subtle)] opacity-30">•</span>
+                <span>{daysLabel}</span>
+              </div>
             </motion.div>
 
             <h1
-              className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-[-0.02em] text-[48px] md:text-[72px] lg:text-[88px] leading-[0.9] mb-8"
+              className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-[-0.02em] text-[clamp(42px,5vw,76px)] leading-[0.92] mb-6 md:mb-7"
               style={{ viewTransitionName: 'raceweekend-title' }}
             >
               {words.map((word, i) => (
-                <div key={i} className="overflow-hidden">
-                  <motion.div
+                <span key={i} className="inline-block overflow-hidden mr-[0.22em] last:mr-0">
+                  <motion.span
+                    className="inline-block"
                     initial={{ y: '100%', opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.1 + i * 0.1 }}
                   >
                     {word}
-                  </motion.div>
-                </div>
+                  </motion.span>
+                </span>
               ))}
             </h1>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-0 max-w-3xl mb-12">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-0 max-w-3xl mb-6 md:mb-8">
               <Fact index={1} label="Circuit" value={nextRace.Circuit?.circuitName} />
               <Fact index={2} label="Location" value={
                 <span className="flex items-center gap-2">
@@ -151,6 +183,16 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
                 </span>
               } />
               <Fact index={3} label="Dates" value={orDash(dates)} mono />
+              <Fact index={4} label="Total Laps" value={prevEdition?.laps || '—'} mono />
+              <Fact index={5} label="Last Winner" value={
+                prevEdition?.winnerName ? (
+                  <span className="flex items-baseline gap-1.5 flex-wrap">
+                    <span>{prevEdition.winnerName}</span>
+                    <span className="text-[13px] font-normal text-[var(--text-muted)] dv2-fig">{prevEdition.season}</span>
+                  </span>
+                ) : '—'
+              } />
+              <Fact index={6} label="Track Length" value={trackLength || '—'} mono />
             </div>
 
             <motion.div 
@@ -166,36 +208,43 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
           </div>
           
           {/* Stat Strip & Countdown */}
-          <div className="lg:col-span-5 xl:col-span-4 flex flex-col bg-[var(--surface-1)] border border-[var(--border)] rounded-[4px] p-6 lg:p-8 backdrop-blur-md">
+          <div className="lg:col-span-5 xl:col-span-4 flex flex-col bg-[var(--surface-1)] border border-[var(--border)] rounded-[4px] p-6 lg:p-8 backdrop-blur-md self-start">
             <motion.div 
-              className="mb-10"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.4 }}
             >
-              <Countdown targetIso={countdownTarget} label={`Next: ${nextSession?.title || 'Race'}`} />
+              <Countdown 
+                targetIso={countdownTarget} 
+                label={isSessionLive ? `Live: ${nextSession?.title || 'Race'}` : `Next: ${nextSession?.title || 'Race'}`} 
+                isLive={isSessionLive}
+                onExpire={handleExpire}
+              />
             </motion.div>
             
             <motion.div 
-              className="border-t border-[var(--border)] pt-8"
+              className="border-t border-[var(--border)] pt-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.4 }}
             >
-              <div className="text-[11px] uppercase tracking-[0.1em] font-medium text-[var(--text-muted)] mb-4">
+              <div className="text-[11px] uppercase tracking-[0.1em] font-medium text-[var(--text-muted)] mb-2">
                 Weekend Schedule ({tz.timezoneAbbr})
               </div>
               <ul className="flex flex-col">
                 {weekendSessions.map((session) => {
                   const isPast = session.isFinished
-                  const isActive = session.isLive
+                  const isActive = session.isLive || (isSessionLive && session.id === nextSession?.id)
                   return (
                     <li key={session.id} className={cn(
-                      'flex items-center justify-between py-3 border-b border-[var(--border)]/50 last:border-b-0',
+                      'h-[40px] flex items-center justify-between border-b border-[var(--border)] last:border-b-0',
                       isPast && 'opacity-50'
                     )}>
                       <div className="flex items-center gap-3">
-                        <div className={cn('w-1.5 h-1.5 rounded-full', isActive ? 'bg-[var(--accent)]' : (isPast ? 'bg-transparent' : 'bg-[var(--text-muted)]'))} />
+                        <div className={cn(
+                          'w-1.5 h-1.5 rounded-full transition-colors',
+                          isActive ? 'bg-[var(--accent)] animate-pulse' : (isPast ? 'bg-transparent' : 'bg-[var(--text-muted)]')
+                        )} />
                         <span className="text-[14px] font-medium">{session.title}</span>
                       </div>
                       <div className="flex items-center gap-4">

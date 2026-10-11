@@ -7,9 +7,20 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           
           <div className="md:col-span-2 flex flex-col gap-6">
-            <span className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-[-0.01em] text-[28px] leading-none">
-              Pitwall
-            </span>
+            <div className="flex flex-col gap-1">
+              <span className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-[-0.01em] text-[28px] leading-none flex items-center gap-1.5">
+                <span>F1</span>
+                <span className="text-[var(--accent)]">Paddock</span>
+              </span>
+              <a 
+                href="https://f1paddock.live" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-[12px] font-mono text-[var(--accent)] hover:underline font-semibold tracking-wider uppercase mt-1"
+              >
+                f1paddock.live
+              </a>
+            </div>
             <p className="text-[14px] text-[var(--text-muted)] max-w-sm leading-relaxed">
               An unofficial, non-commercial fan project. 
               Not affiliated with Formula 1, Formula One Management, or any related companies.
@@ -37,7 +48,7 @@ export const Footer: React.FC = () => {
         
         <div className="mt-16 pt-8 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row justify-between items-center gap-4">
           <span className="text-[13px] text-[var(--text-muted)]">
-            © {new Date().getFullYear()} Pitwall. Data is provided for educational purposes.
+            © {new Date().getFullYear()} F1 Paddock (f1paddock.live). Data is provided for educational purposes.
           </span>
           <div className="text-[13px] text-[var(--text-muted)]">
             F1, FORMULA ONE, FORMULA 1, FIA FORMULA ONE WORLD CHAMPIONSHIP, GRAND PRIX and related marks are trade marks of Formula One Licensing B.V.

@@ -186,19 +186,34 @@ export class SessionService {
   }
 
   /**
-   * Finds the upcoming race round from a list of races based on current date.
+   * Finds the upcoming race round from a list of races based on current date and last completed round.
    */
-  static findNextRace(races: F1Race[], referenceTime: Date = new Date()): F1Race | null {
+  static findNextRace(
+    races: F1Race[],
+    referenceTime: Date = new Date(),
+    lastCompletedRound?: number | string
+  ): F1Race | null {
     if (!races || races.length === 0) return null
 
+    const completedRoundNum =
+      lastCompletedRound !== undefined && lastCompletedRound !== null
+        ? Number(lastCompletedRound)
+        : null
     const refMs = referenceTime.getTime()
 
     for (const race of races) {
-      // A race weekend is considered active or upcoming until 3 hours after race start
+      const raceRoundNum = Number(race.round)
+
+      // If official results show this round is already completed, immediately advance
+      if (completedRoundNum !== null && !isNaN(completedRoundNum) && raceRoundNum <= completedRoundNum) {
+        continue
+      }
+
+      // Check if race has finished based on time (standard GP duration is 2 hours)
       const raceIso = SessionService.parseSessionIso(race.date, race.time)
       if (raceIso) {
         const raceTimeMs = new Date(raceIso).getTime()
-        const raceEndMs = raceTimeMs + 3 * 60 * 60 * 1000
+        const raceEndMs = raceTimeMs + 2 * 60 * 60 * 1000
         if (refMs < raceEndMs) {
           return race
         }
