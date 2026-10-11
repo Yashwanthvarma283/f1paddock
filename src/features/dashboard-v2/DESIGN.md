@@ -98,9 +98,10 @@ a failed script never hides the page.
 
 **One authored moment.** The hero's fact rows and session list arrive as a short
 stagger — 220ms each, 40ms apart, total capped at 240ms, `translateY(6px)` → `0`.
-Driven by **CSS, not the motion library**: CSS animations run off the main thread and
-stay smooth during initial data fetch, where `requestAnimationFrame` drops frames.
-Nothing else on the page has an entrance animation.
+Sections below reveal with a subtle fade-up (`whileInView`, opacity and `translateY(20px)` → `0`).
+Every section is backed by an immediate fallback for `prefers-reduced-motion` and an
+unconditional 1.5s safe timeout fallback so content is guaranteed to render even if the
+IntersectionObserver does not fire or in static capture environments.
 
 | Interaction | Spec |
 |---|---|
@@ -142,7 +143,7 @@ legible.
 |---|---|---|
 | Centred section headings | Left-aligned | Approved. formula1.com left-aligns every heading; centred titles fight left-aligned table content |
 | Countdown digit tick | **No per-digit animation** | A digit changing every second is seen constantly; animating it is noise, and f1.com's own countdown doesn't. Tabular mono stops digits shifting. Say the word and I'll add a 120ms opacity tick |
-| One staggered fade-up on load | Hero only | A repeated identical entrance on every section is animation debt; one authored moment is the stronger choice |
+| One staggered fade-up on load | Hero + subtle section reveals | Hero leads with authored stagger; subsequent sections reveal via whileInView with 1.5s fallback & reduced-motion bypass |
 | Soft cards with one marker each | Cards for drivers only | Generic card containers are banned on dense data; dividers read cleaner |
 
 ## Data gaps

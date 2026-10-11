@@ -9,6 +9,7 @@ import { Figure, Label, QuietError, EmptyNote } from '@/features/dashboard-v2/pr
 import type { ConstructorStandingItem, DriverStandingItem } from '@/api/types'
 import type { RaceWeekendModel } from './types'
 import { WeekendSection } from './WeekendSection'
+import { useRenderCount } from './RenderTelemetry'
 
 interface ChampionshipContextProps {
   model: RaceWeekendModel
@@ -78,6 +79,7 @@ const ConstructorRow: React.FC<{ item: ConstructorStandingItem; leaderPoints: nu
 }
 
 export const ChampionshipContext: React.FC<ChampionshipContextProps> = ({ model, isLoading, isError, onRetry }) => {
+  useRenderCount('championship')
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedTab = searchParams.get('tab') === 'constructors' ? 'constructors' : 'drivers'
   const reduceMotion = useReducedMotion()

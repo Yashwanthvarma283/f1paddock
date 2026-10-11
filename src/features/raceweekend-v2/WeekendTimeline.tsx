@@ -1,14 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Figure, EmptyNote } from '@/features/dashboard-v2/primitives'
-import { useNow } from '@/hooks/useNow'
 import { WeekendSection } from './WeekendSection'
 import type { WeekendSession } from '@/api/types'
 import type { RaceWeekendModel } from './types'
 import { formatDateInTimezone, formatSessionType, formatTimeInTimezone, formatWeekdayInTimezone, getDateKey, getSessionState } from './utils'
+import { useRenderCount } from './RenderTelemetry'
 
 export function WeekendTimeline({ model }: { model: RaceWeekendModel }) {
-  const now = useNow(1000)
+  useRenderCount('timeline')
+  const [now] = useState(() => new Date())
   const groups = useMemo(() => {
     const days = new Map<string, WeekendSession[]>()
     model.sessions.forEach(session => {

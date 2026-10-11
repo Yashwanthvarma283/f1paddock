@@ -2,6 +2,7 @@ import type { F1Race, WeekendSession } from '@/api/types'
 import { CIRCUITS } from '@/lib/circuits'
 import { SessionService } from '@/api/sessionService'
 import { formatTimeInZone } from '@/lib/timezone'
+import type { TurnMarker } from '@/lib/circuits'
 import type { SessionState, WeekendState } from './types'
 
 export const RACEWEEKEND_SECTIONS = [
@@ -96,6 +97,15 @@ export function formatWeekendDates(sessions: WeekendSession[], timezone: string)
 export function resolveCircuit(race: F1Race) {
   // Exact IDs only: the legacy fuzzy resolver can substitute unrelated circuits.
   return CIRCUITS[race.Circuit.circuitId] ?? null
+}
+
+export function countPathPoints(path: string): number {
+  return (path.match(/[MLCQSTAHV]/gi) ?? []).length
+}
+
+export function isSimplifiedOutline(circuit: { path: string; turns: number; turnsData: TurnMarker[] }): boolean {
+  const markerCoverage = circuit.turns > 0 ? circuit.turnsData.length / circuit.turns : 0
+  return markerCoverage < 0.7 || countPathPoints(circuit.path) < 20
 }
 
 export function buildSessions(race: F1Race): WeekendSession[] {

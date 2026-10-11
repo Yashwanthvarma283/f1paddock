@@ -28,6 +28,11 @@ export const RaceWeekendPage: React.FC = () => {
 
   useEffect(() => {
     performance.mark('raceweekend-route-mounted')
+    const frame = window.requestAnimationFrame(() => {
+      performance.mark('raceweekend-first-frame')
+      performance.measure('raceweekend-route-to-first-frame', 'raceweekend-route-mounted', 'raceweekend-first-frame')
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   useEffect(() => {

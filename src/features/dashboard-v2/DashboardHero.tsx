@@ -1,5 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { flushSync } from 'react-dom'
 import { useSchedule } from '@/api/useF1Data'
 import { SessionService } from '@/api/sessionService'
 import { useTimezone } from '@/context/TimezoneContext'
@@ -15,6 +16,7 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
   const { data: schedule, isLoading, isError, refetch } = useSchedule()
   const tz = useTimezone()
   const now = useNow()
+  const navigate = useNavigate()
   
   if (isLoading) {
     return (
@@ -85,9 +87,21 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
   }
 
   const words = nextRace.raceName.split(' ')
+  const weekendPath = `/test/raceweekend/${nextRace.round}`
+  const handleWeekendNavigation = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+
+    event.preventDefault()
+    const navigateNow = () => flushSync(() => navigate(weekendPath))
+    if (typeof document.startViewTransition === 'function') {
+      document.startViewTransition(navigateNow)
+    } else {
+      navigateNow()
+    }
+  }
 
   return (
-    <section id={id} className="relative w-full bg-[var(--bg)] text-[var(--text)] border-b border-[var(--border-subtle)] pt-[43px] md:pt-[51px] lg:pt-[75px] pb-12 md:pb-16 lg:pb-24 overflow-hidden">
+    <section id={id} className="relative w-full bg-[var(--bg)] text-[var(--text)] border-b border-[var(--border-subtle)] pt-[43px] md:pt-[51px] lg:pt-[75px] pb-0 overflow-hidden">
       {/* Background Circuit Outline */}
       <div className="absolute inset-0 z-0 pointer-events-none w-full h-full flex items-center justify-center md:pr-[10%] lg:pr-[14%] pb-12 md:pb-20">
         <CircuitOutline circuitId={nextRace.Circuit?.circuitId} variant="hero-3d" className="w-[85%] h-[85%] md:w-[60%] md:h-[60%] text-[var(--text)] object-contain" />
@@ -111,7 +125,10 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
               <span>{daysLabel}</span>
             </motion.div>
 
-            <h1 className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-[-0.02em] text-[48px] md:text-[72px] lg:text-[88px] leading-[0.9] mb-8">
+            <h1
+              className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-[-0.02em] text-[48px] md:text-[72px] lg:text-[88px] leading-[0.9] mb-8"
+              style={{ viewTransitionName: 'raceweekend-title' }}
+            >
               {words.map((word, i) => (
                 <div key={i} className="overflow-hidden">
                   <motion.div
@@ -142,7 +159,7 @@ export const DashboardHero: React.FC<{ id?: string }> = ({ id }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.4 }}
             >
-              <Link to={`/test/raceweekend/${nextRace.round}`} viewTransition>
+              <Link to={weekendPath} viewTransition onClick={handleWeekendNavigation}>
                 <PrimaryButton>View race weekend</PrimaryButton>
               </Link>
             </motion.div>

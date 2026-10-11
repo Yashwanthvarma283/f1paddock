@@ -15,11 +15,21 @@ try {
       overflow: document.documentElement.scrollWidth - window.innerWidth,
       sections: document.querySelectorAll('main section.rw-anchor').length,
       navItems: document.querySelectorAll('.rw-nav-link').length,
-      perf: performance.getEntriesByName('rw-circuit-mount').length,
+      perf: {
+        routeToFirstFrame: performance.getEntriesByName('raceweekend-route-to-first-frame').length,
+        dataToPage: performance.getEntriesByName('raceweekend-data-to-page').length,
+      },
       overflowNodes: Array.from(document.querySelectorAll('*')).map((node) => {
         const rect = node.getBoundingClientRect()
-        return { tag: node.tagName, cls: node.className?.toString?.().slice(0, 80), right: Math.round(rect.right), width: Math.round(rect.width) }
-      }).filter((item) => item.right > window.innerWidth + 1 && !item.cls.includes('dv2-drawer')).slice(0, 5),
+        const style = getComputedStyle(node)
+        return {
+          tag: node.tagName,
+          cls: node.className?.toString?.().slice(0, 80),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          hidden: Boolean(node.closest('[aria-hidden="true"]')) || style.display === 'none' || style.visibility === 'hidden',
+        }
+      }).filter((item) => item.right > window.innerWidth + 1 && !item.hidden).slice(0, 5),
     }))
     await page.getByRole('tab', { name: 'constructors' }).click()
     const tabUrl = page.url()

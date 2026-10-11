@@ -3,13 +3,14 @@ import { useLastRaceResult } from '@/api/useF1Data'
 import { getTeamMeta } from '@/lib/teams'
 import { Section, SectionHeading, RowSkeleton, QuietError, Figure, Label, EMPTY } from './primitives'
 import { cn } from '@/lib/utils'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { DriverAvatar } from './DriverAvatar'
 import { TeamLogo } from './TeamLogo'
 import { StandingsSection } from './StandingsSection'
 
 const PodiumSpot: React.FC<{ entry: any; position: 1 | 2 | 3 }> = ({ entry, position }) => {
   const teamMeta = getTeamMeta(entry.Constructor.constructorId)
+  const shouldReduceMotion = useReducedMotion()
 
   const elevationClass = 
     position === 1 ? "mb-8 md:mb-12" :
@@ -38,7 +39,7 @@ const PodiumSpot: React.FC<{ entry: any; position: 1 | 2 | 3 }> = ({ entry, posi
         
         <div className="flex items-center justify-center gap-1.5 mt-1 min-w-0 px-1 w-full">
           <TeamLogo teamId={teamMeta.id} teamName={teamMeta.name} className="h-3 w-4 md:h-4 md:w-5 object-contain shrink-0" showTeamNameNextToIt={false} />
-          <div className="text-[10px] md:text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] truncate min-w-0 hidden md:block">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] truncate min-w-0 hidden md:block">
             {teamMeta.name}
           </div>
         </div>
@@ -53,10 +54,11 @@ const PodiumSpot: React.FC<{ entry: any; position: 1 | 2 | 3 }> = ({ entry, posi
         <motion.div 
           className="w-full h-[4px] rounded-t-[2px] origin-bottom"
           style={{ backgroundColor: teamMeta.color }}
-          initial={{ scaleY: 0 }}
-          whileInView={{ scaleY: 1 }}
+          initial={shouldReduceMotion ? false : { scaleY: 0 }}
+          animate={shouldReduceMotion ? { scaleY: 1 } : undefined}
+          whileInView={shouldReduceMotion ? undefined : { scaleY: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: position * 0.1 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.5, delay: position * 0.1 }}
         />
         <div className="font-[family-name:var(--font-display)] text-[20px] md:text-[24px] font-bold text-[var(--text-muted)] mt-1.5">
           {position}
@@ -101,12 +103,12 @@ export const LatestResultSection: React.FC<{ id?: string }> = ({ id }) => {
         action={
           <div className="flex flex-row items-center gap-4 sm:gap-6">
             <div className="flex flex-col items-start sm:items-end">
-              <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-0.5">Total Laps</span>
+              <span className="text-[11px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-0.5">Total Laps</span>
               <span className="font-mono text-[14px] font-semibold">{p1?.laps || '-'}</span>
             </div>
             <div className="w-px h-6 bg-[var(--border-subtle)]"></div>
             <div className="flex flex-col items-start sm:items-end">
-              <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-0.5">Fastest Lap</span>
+              <span className="text-[11px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-0.5">Fastest Lap</span>
               <span className="font-mono text-[14px] font-semibold">
                 {result.fastestLap ? (
                   <>

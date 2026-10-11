@@ -1,14 +1,17 @@
-import { memo, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { Figure, Label, EmptyNote } from '@/features/dashboard-v2/primitives'
 import type { CircuitInfo, TurnMarker } from '@/lib/circuits'
 import { WeekendSection } from './WeekendSection'
 import { FactFigure } from './FactFigure'
+import { isSimplifiedOutline } from './utils'
+import { useRenderCount } from './RenderTelemetry'
 
 const sectors = [1, 2, 3] as const
 const colors = { 1: 'var(--timing-purple)', 2: 'var(--timing-green)', 3: 'var(--timing-yellow)' }
 
 export const CircuitExplorer = memo(function CircuitExplorer({ circuit }: { circuit: CircuitInfo | null }) {
+  useRenderCount('circuit')
   const stage = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
   const [sector, setSector] = useState<1 | 2 | 3>(1)
@@ -18,13 +21,10 @@ export const CircuitExplorer = memo(function CircuitExplorer({ circuit }: { circ
   useMotionValueEvent(scrollYProgress, 'change', value => {
     if (!reduced) setSector(value < 1 / 3 ? 1 : value < 2 / 3 ? 2 : 3)
   })
-  useLayoutEffect(() => {
-    const start = performance.now()
-    performance.measure('rw-circuit-mount', { start, end: performance.now() })
-  }, [])
   if (!circuit) return <WeekendSection id="circuit" title="Know the circuit"><EmptyNote>Circuit geometry is not available for this round.</EmptyNote></WeekendSection>
   const [x, y, width, height] = circuit.viewBox.split(' ').map(Number)
   const active = selected?.sector ?? sector
+  const simplified = isSimplifiedOutline(circuit)
 
   return <WeekendSection id="circuit" title="Know the circuit" action={<span className="rw-muted">{circuit.name}</span>}>
     <div ref={stage} className={`rw-circuit-grid${reduced ? ' is-static' : ''}`}>
@@ -62,6 +62,7 @@ export const CircuitExplorer = memo(function CircuitExplorer({ circuit }: { circ
           <div className="rw-record"><Label>Lap record</Label><Figure>{circuit.lapRecord || '—'}</Figure></div>
         </div>
         <p className="rw-intro">Follow the outline. Select a sector to find its marked turns.</p>
+        {simplified ? <p className="rw-simplified-note">Simplified outline</p> : null}
         <div className="rw-sector-chapters" aria-label="Circuit sectors">
           {sectors.map(number => {
             const turns = circuit.turnsData.filter(turn => turn.sector === number)

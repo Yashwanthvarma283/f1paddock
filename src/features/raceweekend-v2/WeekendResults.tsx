@@ -8,6 +8,7 @@ import { Figure, Label, EmptyNote } from '@/features/dashboard-v2/primitives'
 import type { F1ResultItem } from '@/api/types'
 import type { RaceWeekendModel } from './types'
 import { WeekendSection } from './WeekendSection'
+import { useRenderCount } from './RenderTelemetry'
 
 interface WeekendResultsProps {
   model: RaceWeekendModel
@@ -55,6 +56,7 @@ const PodiumSpot: React.FC<{ item: F1ResultItem; place: 1 | 2 | 3 }> = ({ item, 
 }
 
 export const WeekendResults: React.FC<WeekendResultsProps> = ({ model }) => {
+  useRenderCount('results')
   const [expanded, setExpanded] = useState(true)
   const result = model.result
   const podium = result?.results.filter((item) => ['1', '2', '3'].includes(item.position)).sort((a, b) => Number(a.position) - Number(b.position)) ?? []

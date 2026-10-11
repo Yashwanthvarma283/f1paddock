@@ -3,10 +3,12 @@ import { useReducedMotion } from 'motion/react'
 import { RACEWEEKEND_SECTIONS } from './utils'
 import { CompactWeekendBar } from './WeekendHero'
 import type { RaceWeekendModel } from './types'
+import { useRenderCount } from './RenderTelemetry'
 
 const OFFSET = 160
 
 export function WeekendNav({ model, showResults }: { model: RaceWeekendModel; showResults: boolean }) {
+  useRenderCount('nav')
   const [active, setActive] = useState('weekend')
   const [collapsed, setCollapsed] = useState(false)
   const reduced = useReducedMotion()

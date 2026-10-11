@@ -1,10 +1,10 @@
 import { chromium } from 'playwright';
-import fs from 'fs';
-import path from 'path';
 
 (async () => {
   const browser = await chromium.launch();
-  const context = await browser.newContext();
+  const context = await browser.newContext({
+    reducedMotion: 'reduce'
+  });
   const page = await context.newPage();
 
   const viewports = [
@@ -16,24 +16,19 @@ import path from 'path';
 
   await page.goto('http://localhost:5173/test/dashboard');
   await page.waitForSelector('section');
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(1600);
 
   for (const vp of viewports) {
     await page.setViewportSize(vp);
     await page.waitForTimeout(500);
 
     const measurements = await page.evaluate(() => {
-      const getBottomEdge = (el) => {
-        const rect = el.getBoundingClientRect();
-        return rect.bottom;
-      };
-      
-      const getTopEdge = (el) => {
-        const rect = el.getBoundingClientRect();
-        return rect.top;
-      };
+      try {
+        const getBottomEdge = (el) => el.getBoundingClientRect().bottom;
+        const getTopEdge = (el) => el.getBoundingClientRect().top;
 
       const sections = Array.from(document.querySelectorAll('section'));
+      const racingLines = Array.from(document.querySelectorAll('svg[viewBox="0 0 25200 200"]'));
       const footer = document.querySelector('footer');
       
       const results = [];
@@ -41,47 +36,60 @@ import path from 'path';
         const current = sections[i];
         const next = sections[i + 1];
         
-        // Find last content element of current section (ignoring paddings)
-        // A simple way is to find the bottom-most child
-        const currentChildren = Array.from(current.querySelectorAll('*')).filter(el => el.getBoundingClientRect().height > 0);
-        let maxBottom = getBottomEdge(current);
+        // Find last content element of current section (ignoring background graphics/3D track)
+        let contentContainer = current;
+        if (current.id === 'next-race') {
+          contentContainer = current.querySelector('.relative.z-10') || current;
+        }
+        
+        const currentChildren = Array.from(contentContainer.querySelectorAll('*')).filter(el => {
+          const r = el.getBoundingClientRect();
+          return r.height > 0 && !el.closest('.pointer-events-none') && !el.getAttribute('aria-hidden');
+        });
+
+        let maxBottom = getBottomEdge(contentContainer);
         if (currentChildren.length > 0) {
           maxBottom = Math.max(...currentChildren.map(getBottomEdge));
         }
 
         // Find heading of next section
-        const nextHeading = next.querySelector('h1, h2, h3, h4, h5, h6, .dv2-heading, [class*="text-["]'); // approximate
-        let nextTop = getTopEdge(next);
-        if (nextHeading) {
-          nextTop = getTopEdge(nextHeading);
+        const nextHeading = next.querySelector('.sticky, h1, h2, h3, [data-heading]') || next;
+        const nextTop = getTopEdge(nextHeading);
+
+        // Distance measured around the red RacingLine
+        const rl = racingLines[i];
+        let distance;
+        let spaceAbove = 0;
+        let spaceBelow = 0;
+        if (rl) {
+          const rlRect = rl.getBoundingClientRect();
+          spaceAbove = Math.max(0, rlRect.top - maxBottom);
+          spaceBelow = Math.max(0, nextTop - rlRect.bottom);
+          distance = Math.round(spaceAbove + spaceBelow);
         } else {
-          const nextChildren = Array.from(next.querySelectorAll('*')).filter(el => el.getBoundingClientRect().height > 0);
-          if (nextChildren.length > 0) {
-            nextTop = Math.min(...nextChildren.map(getTopEdge));
-          }
+          distance = Math.round(nextTop - maxBottom);
         }
 
         results.push({
           from: current.id || `Section ${i+1}`,
           to: next.id || `Section ${i+2}`,
-          distance: Math.round(nextTop - maxBottom)
+          distance
         });
       }
 
       if (sections.length > 0 && footer) {
         const lastSection = sections[sections.length - 1];
-        const currentChildren = Array.from(lastSection.querySelectorAll('*')).filter(el => el.getBoundingClientRect().height > 0);
+        const currentChildren = Array.from(lastSection.querySelectorAll('*')).filter(el => {
+          const r = el.getBoundingClientRect();
+          return r.height > 0 && !el.closest('.pointer-events-none') && !el.getAttribute('aria-hidden');
+        });
+
         let maxBottom = getBottomEdge(lastSection);
         if (currentChildren.length > 0) {
           maxBottom = Math.max(...currentChildren.map(getBottomEdge));
         }
         
-        // first visible child of footer
-        const footerChildren = Array.from(footer.querySelectorAll('*')).filter(el => el.getBoundingClientRect().height > 0);
-        let footerTop = getTopEdge(footer);
-        if (footerChildren.length > 0) {
-          footerTop = Math.min(...footerChildren.map(getTopEdge));
-        }
+        const footerTop = getTopEdge(footer);
 
         results.push({
           from: lastSection.id || 'Last Section',
@@ -90,10 +98,14 @@ import path from 'path';
         });
       }
 
-      return results;
+        return results;
+      } catch (err) {
+        return [{ from: 'ERROR', to: err.message, distance: 0 }];
+      }
     });
 
     console.log(`\nViewport: ${vp.width}x${vp.height}`);
+    console.log('RAW MEASUREMENTS:', measurements);
     console.table(measurements);
   }
 

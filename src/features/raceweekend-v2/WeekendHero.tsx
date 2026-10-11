@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Clock } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
@@ -15,6 +15,7 @@ import {
   getNextSession,
   getSessionState,
 } from './utils'
+import { useRenderCount } from './RenderTelemetry'
 
 interface WeekendHeroProps {
   model: RaceWeekendModel
@@ -24,14 +25,29 @@ export const WeekendCountdown: React.FC<{
   model: RaceWeekendModel
   compact?: boolean
 }> = ({ model, compact = false }) => {
+  useRenderCount(compact ? 'compact-countdown' : 'hero-countdown')
   const now = useNow(1000)
   const nextSession = getNextSession(model.sessions, now)
   const state = nextSession ? getSessionState(nextSession, now) : null
   const target = state === 'running' ? nextSession?.endTimeIso : nextSession?.startTimeIso
   const label = state === 'running' ? 'Ends in' : 'Next session'
 
+  if (compact) {
+    const compactLabel = state === 'running'
+      ? `Ends · ${nextSession ? nextSession.type : 'session'}`
+      : nextSession
+        ? `Next · ${nextSession.type}`
+        : 'Complete'
+    return (
+      <div className="rw-compact-countdown" aria-label={`${compactLabel} ${formatCountdown(target ?? null, now)}`}>
+        <span>{compactLabel}</span>
+        <Figure>{formatCountdown(target ?? null, now)}</Figure>
+      </div>
+    )
+  }
+
   return (
-    <div className={compact ? 'rw-countdown rw-countdown-compact' : 'rw-countdown'}>
+    <div className="rw-countdown">
       <Label>{label}</Label>
       <Figure className={compact ? 'text-[16px] font-semibold' : 'text-[30px] md:text-[42px] font-semibold leading-none'}>
         {formatCountdown(target ?? null, now)}
@@ -44,11 +60,11 @@ export const WeekendCountdown: React.FC<{
 }
 
 export const WeekendHero: React.FC<WeekendHeroProps> = ({ model }) => {
+  useRenderCount('hero')
   const reduceMotion = useReducedMotion()
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const now = useNow(1000)
   const timezone = model.selectedTimezone
-  const nextSession = getNextSession(model.sessions, now)
+  const nextSession = useMemo(() => getNextSession(model.sessions), [model.sessions])
   const stateLabel = useMemo(() => {
     if (model.weekendState === 'in-progress') return 'Running now'
     if (model.weekendState === 'completed') return 'Weekend complete'
@@ -58,11 +74,6 @@ export const WeekendHero: React.FC<WeekendHeroProps> = ({ model }) => {
   useEffect(() => {
     if (!location.hash) { window.scrollTo(0, 0); headingRef.current?.focus({ preventScroll: true }) }
   }, [model.race.round])
-  useLayoutEffect(() => {
-    const start = performance.now()
-    performance.measure('rw-hero-mount', { start, end: performance.now() })
-  }, [])
-
   return (
     <>
       <section id="weekend" aria-labelledby="weekend-heading" className="rw-hero rw-anchor">
@@ -90,6 +101,7 @@ export const WeekendHero: React.FC<WeekendHeroProps> = ({ model }) => {
                 ref={headingRef}
                 tabIndex={-1}
                 className="rw-title"
+                style={{ viewTransitionName: 'raceweekend-title' }}
               >
                 {model.race.raceName}
               </h1>
@@ -145,7 +157,7 @@ export const WeekendHero: React.FC<WeekendHeroProps> = ({ model }) => {
 
 export const CompactWeekendBar: React.FC<{ model: RaceWeekendModel }> = ({ model }) => (
   <div className="rw-compact-bar">
-    <div className="min-w-0">
+    <div className="rw-compact-leading">
       <span className="rw-compact-round">R{String(model.race.round).padStart(2, '0')}</span>
       <span className="rw-compact-name">{model.race.raceName}</span>
     </div>

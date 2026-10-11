@@ -44,7 +44,7 @@ export const Label: React.FC<{
   )
 }
 
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 
 /**
  * Left-aligned section heading with an optional action on the same baseline.
@@ -56,7 +56,7 @@ export const SectionHeading: React.FC<{
   action?: React.ReactNode
   id?: string
 }> = ({ subtitle, children, action, id }) => (
-  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 py-6 mb-6 sticky top-16 z-30 bg-[var(--bg)] border-b border-[var(--border-subtle)] -mx-5 px-5 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
+  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-0 pb-6 mb-6 sticky top-16 z-30 bg-[var(--bg)] border-b border-[var(--border-subtle)] -mx-5 px-5 md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
     <div className="flex items-center gap-4">
       <div className="flex flex-col">
         {subtitle && (
@@ -209,16 +209,48 @@ export const Section: React.FC<{
   children: React.ReactNode
   labelledBy?: string
   className?: string
-}> = ({ id, children, labelledBy, className }) => (
-  <motion.section
-    id={id}
-    aria-labelledby={labelledBy}
-    className={cn("scroll-mt-[128px]", className)}
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: "-100px" }}
-    transition={{ duration: 0.4, ease: "easeOut" }}
-  >
-    {children}
-  </motion.section>
-)
+}> = ({ id, children, labelledBy, className }) => {
+  const shouldReduceMotion = useReducedMotion()
+  const [isVisible, setIsVisible] = React.useState(Boolean(shouldReduceMotion))
+
+  React.useEffect(() => {
+    if (shouldReduceMotion) {
+      setIsVisible(true)
+      return
+    }
+    // Safe fallback: content must become visible within 1.5s even if observer does not fire
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldReduceMotion])
+
+  if (shouldReduceMotion) {
+    return (
+      <section
+        id={id}
+        aria-labelledby={labelledBy}
+        className={cn("scroll-mt-[128px]", className)}
+        style={{ opacity: 1, transform: 'none' }}
+      >
+        {children}
+      </section>
+    )
+  }
+
+  return (
+    <motion.section
+      id={id}
+      aria-labelledby={labelledBy}
+      className={cn("scroll-mt-[128px]", className)}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isVisible ? { opacity: 1, y: 0 } : undefined}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "0px" }}
+      onViewportEnter={() => setIsVisible(true)}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
+      {children}
+    </motion.section>
+  )
+}

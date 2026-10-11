@@ -1,7 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { getCircuitInfo, TurnMarker } from '@/lib/circuits'
 import { cn } from '@/lib/utils'
+
+interface CachedTrackData {
+  len: number
+  snappedTurns: TurnMarker[]
+  sfLen: number
+  s1End: number
+  s2End: number
+}
+
+const circuitDataCache = new Map<string, CachedTrackData>()
 
 interface CircuitOutlineProps {
   circuitId?: string
@@ -45,90 +55,181 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
   const anchorRefs = useRef<Record<number, SVGCircleElement | null>>({})
   const overlayPillsRef = useRef<Record<number, HTMLDivElement | null>>({})
 
+  const shouldReduceMotion = useReducedMotion()
+
   useEffect(() => {
     if (pathRef.current) {
-      const len = pathRef.current.getTotalLength()
-      setPathLength(len)
-      
-      const computedTurns = info.turnsData.map(turn => {
-        let bestDist = Infinity;
-        let bestLen = 0;
-        let bestPt = { x: turn.x, y: turn.y };
-        for (let l = 0; l <= len; l += 1) {
-          const pt = pathRef.current!.getPointAtLength(l);
-          const d = Math.hypot(pt.x - turn.x, pt.y - turn.y);
-          if (d < bestDist) {
-            bestDist = d;
-            bestLen = l;
-            bestPt = { x: pt.x, y: pt.y };
+      const t0 = performance.now();
+      const cacheKey = circuitId || info.id || info.name || 'default';
+      let data = circuitDataCache.get(cacheKey);
+
+      if (!data) {
+        const len = pathRef.current.getTotalLength();
+        const STEP = 4;
+        const samples: { len: number; x: number; y: number }[] = [];
+        for (let l = 0; l <= len; l += STEP) {
+          const pt = pathRef.current.getPointAtLength(l);
+          samples.push({ len: l, x: pt.x, y: pt.y });
+        }
+        if (samples.length === 0 || samples[samples.length - 1].len < len) {
+          const pt = pathRef.current.getPointAtLength(len);
+          samples.push({ len, x: pt.x, y: pt.y });
+        }
+
+        const snapPoint = (targetX: number, targetY: number) => {
+          let bestDist = Infinity;
+          let bestIdx = 0;
+          for (let i = 0; i < samples.length; i++) {
+            const s = samples[i];
+            const d = Math.hypot(s.x - targetX, s.y - targetY);
+            if (d < bestDist) {
+              bestDist = d;
+              bestIdx = i;
+            }
           }
-        }
-        return { ...turn, x: bestPt.x, y: bestPt.y, len: bestLen };
-      });
-      setSnappedTurns(computedTurns);
-      snappedTurnsRef.current = computedTurns;
+          const roughLen = samples[bestIdx].len;
+          let bestPt = { x: samples[bestIdx].x, y: samples[bestIdx].y };
+          let bestLen = roughLen;
+          const minL = Math.max(0, roughLen - 4);
+          const maxL = Math.min(len, roughLen + 4);
+          for (let l = minL; l <= maxL; l += 1) {
+            const pt = pathRef.current!.getPointAtLength(l);
+            const d = Math.hypot(pt.x - targetX, pt.y - targetY);
+            if (d < bestDist) {
+              bestDist = d;
+              bestLen = l;
+              bestPt = { x: pt.x, y: pt.y };
+            }
+          }
+          return { x: bestPt.x, y: bestPt.y, len: bestLen };
+        };
 
-      let bestSfDist = Infinity;
-      let sfLen = 0;
-      for (let l = 0; l <= len; l += 1) {
-        const pt = pathRef.current!.getPointAtLength(l);
-        const d = Math.hypot(pt.x - info.startFinishPoint.x, pt.y - info.startFinishPoint.y);
-        if (d < bestSfDist) {
-          bestSfDist = d;
-          sfLen = l;
+        const computedTurns = info.turnsData.map(turn => {
+          const snapped = snapPoint(turn.x, turn.y);
+          return { ...turn, x: snapped.x, y: snapped.y, len: snapped.len };
+        });
+
+        const sfSnapped = snapPoint(info.startFinishPoint.x, info.startFinishPoint.y);
+        const sfLen = sfSnapped.len;
+
+        const sorted = [...computedTurns].sort((a, b) => (a.len || 0) - (b.len || 0));
+        const lastS1 = sorted.slice().reverse().find(t => t.sector === 1);
+        const firstS2 = sorted.find(t => t.sector === 2);
+        let s1End = (sfLen + len * 0.333) % len;
+        if (lastS1 && firstS2) {
+          let diff = (firstS2.len || 0) - (lastS1.len || 0);
+          if (diff < 0) diff += len; 
+          s1End = ((lastS1.len || 0) + diff / 2) % len;
         }
+
+        const lastS2 = sorted.slice().reverse().find(t => t.sector === 2);
+        const firstS3 = sorted.find(t => t.sector === 3);
+        let s2End = (sfLen + len * 0.666) % len;
+        if (lastS2 && firstS3) {
+          let diff = (firstS3.len || 0) - (lastS2.len || 0);
+          if (diff < 0) diff += len;
+          s2End = ((lastS2.len || 0) + diff / 2) % len;
+        }
+
+        data = { len, snappedTurns: computedTurns, sfLen, s1End, s2End };
+        circuitDataCache.set(cacheKey, data);
       }
 
-      const sorted = [...computedTurns].sort((a, b) => (a.len || 0) - (b.len || 0));
-      const lastS1 = sorted.slice().reverse().find(t => t.sector === 1);
-      const firstS2 = sorted.find(t => t.sector === 2);
-      let s1End = (sfLen + len * 0.333) % len;
-      if (lastS1 && firstS2) {
-         let diff = (firstS2.len || 0) - (lastS1.len || 0);
-         if (diff < 0) diff += len; 
-         s1End = ((lastS1.len || 0) + diff / 2) % len;
-      }
-      
-      const lastS2 = sorted.slice().reverse().find(t => t.sector === 2);
-      const firstS3 = sorted.find(t => t.sector === 3);
-      let s2End = (sfLen + len * 0.666) % len;
-      if (lastS2 && firstS3) {
-         let diff = (firstS3.len || 0) - (lastS2.len || 0);
-         if (diff < 0) diff += len;
-         s2End = ((lastS2.len || 0) + diff / 2) % len;
-      }
-      
+      setPathLength(data.len);
+      setSnappedTurns(data.snappedTurns);
+      snappedTurnsRef.current = data.snappedTurns;
       setSectorBounds({
-        s1: { start: sfLen, end: s1End },
-        s2: { start: s1End, end: s2End },
-        s3: { start: s2End, end: sfLen }
+        s1: { start: data.sfLen, end: data.s1End },
+        s2: { start: data.s1End, end: data.s2End },
+        s3: { start: data.s2End, end: data.sfLen }
       });
 
-      let startLoopTime: number | null = null
-      const loopDurationMs = variant === 'hero-3d' ? 60000 : 8000 
-      let lastSector = -1
+      if (typeof window !== 'undefined') {
+        (window as any).__heroMountTime = performance.now() - t0;
+      }
+
+      const len = data.len;
+      const sfLen = data.sfLen;
+      const s1End = data.s1End;
+      const s2End = data.s2End;
+
+      if (shouldReduceMotion) {
+        setSectorsVisible(true);
+        if (carOuterRef.current && carInnerRef.current) {
+          const pt = pathRef.current.getPointAtLength(sfLen);
+          carOuterRef.current.setAttribute('cx', String(pt.x));
+          carOuterRef.current.setAttribute('cy', String(pt.y));
+          carInnerRef.current.setAttribute('cx', String(pt.x));
+          carInnerRef.current.setAttribute('cy', String(pt.y));
+        }
+
+        if (variant === 'hero-3d') {
+          const syncCorners = () => {
+            const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
+            if (firstPill && firstPill.parentElement) {
+              const parentRect = firstPill.parentElement.getBoundingClientRect();
+              Object.keys(anchorRefs.current).forEach(key => {
+                const num = Number(key);
+                const anchor = anchorRefs.current[num];
+                const pill = overlayPillsRef.current[num];
+                if (anchor && pill) {
+                  const rect = anchor.getBoundingClientRect();
+                  pill.style.left = `${rect.left - parentRect.left + rect.width / 2}px`;
+                  pill.style.top = `${rect.top - parentRect.top + rect.height / 2}px`;
+                }
+              });
+            }
+          };
+
+          let observer: ResizeObserver | null = null;
+          const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
+          if (firstPill && firstPill.parentElement) {
+            observer = new ResizeObserver(() => syncCorners());
+            observer.observe(firstPill.parentElement);
+            syncCorners();
+          } else {
+            setTimeout(() => {
+              const fp = Object.values(overlayPillsRef.current).find(Boolean);
+              if (fp && fp.parentElement) {
+                observer = new ResizeObserver(() => syncCorners());
+                observer.observe(fp.parentElement);
+                syncCorners();
+              }
+            }, 100);
+          }
+
+          return () => {
+            if (observer) observer.disconnect();
+          };
+        }
+        return;
+      }
+
+      let startLoopTime: number | null = null;
+      const loopDurationMs = variant === 'hero-3d' ? 60000 : 8000;
+      let lastSector = -1;
 
       const loopAnimation = (timestamp: number) => {
-        if (!startLoopTime) startLoopTime = timestamp
-        const elapsed = timestamp - startLoopTime
+        if (!startLoopTime) startLoopTime = timestamp;
+        const elapsed = timestamp - startLoopTime;
         
-        const linearProgress = (elapsed % loopDurationMs) / loopDurationMs
-        const dynamicProgress = linearProgress + (Math.sin(linearProgress * Math.PI * 10) * 0.015)
-        const safeProgress = Math.max(0, Math.min(1, dynamicProgress))
+        const linearProgress = (elapsed % loopDurationMs) / loopDurationMs;
+        const dynamicProgress = linearProgress + (Math.sin(linearProgress * Math.PI * 10) * 0.015);
+        const safeProgress = Math.max(0, Math.min(1, dynamicProgress));
 
         if (pathRef.current) {
-          const pt = pathRef.current.getPointAtLength(safeProgress * len)
+          const pt = pathRef.current.getPointAtLength(safeProgress * len);
           
           if (carOuterRef.current && carInnerRef.current) {
-            carOuterRef.current.setAttribute('cx', String(pt.x))
-            carOuterRef.current.setAttribute('cy', String(pt.y))
-            carInnerRef.current.setAttribute('cx', String(pt.x))
-            carInnerRef.current.setAttribute('cy', String(pt.y))
+            carOuterRef.current.setAttribute('cx', String(pt.x));
+            carOuterRef.current.setAttribute('cy', String(pt.y));
+            carInnerRef.current.setAttribute('cx', String(pt.x));
+            carInnerRef.current.setAttribute('cy', String(pt.y));
           }
           
           if (variant === 'hero-3d') {
-            let currentSector = 1
-            const curLen = safeProgress * len
+            let currentSector = 1;
+            const curLen = safeProgress * len;
             
             const inSector = (pos: number, start: number, end: number) => {
               if (start <= end) {
@@ -147,32 +248,32 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
             }
             
             if (currentSector !== lastSector) {
-               setHeroStage(currentSector)
-               lastSector = currentSector
+               setHeroStage(currentSector);
+               lastSector = currentSector;
             }
 
-            let closestTurn: TurnMarker | null = null
-            let minDistance = 25
+            let closestTurn: TurnMarker | null = null;
+            let minDistance = 25;
             snappedTurnsRef.current.forEach(turn => {
-              const dist = Math.hypot(turn.x - pt.x, turn.y - pt.y)
+              const dist = Math.hypot(turn.x - pt.x, turn.y - pt.y);
               if (dist < minDistance) {
-                minDistance = dist
-                closestTurn = turn
+                minDistance = dist;
+                closestTurn = turn;
               }
-            })
+            });
             const currId = activeTurnRef.current ? activeTurnRef.current.number : null;
             const newId = closestTurn ? (closestTurn as TurnMarker).number : null;
             setActiveTurn(currId === newId ? activeTurnRef.current : closestTurn);
           }
         }
-        animFrameRef.current = requestAnimationFrame(loopAnimation)
-      }
+        animFrameRef.current = requestAnimationFrame(loopAnimation);
+      };
 
       if (variant === 'hero-3d') {
         const t1 = setTimeout(() => {
-          setSectorsVisible(true)
-          animFrameRef.current = requestAnimationFrame(loopAnimation)
-        }, 500)
+          setSectorsVisible(true);
+          animFrameRef.current = requestAnimationFrame(loopAnimation);
+        }, 500);
         
         const syncCorners = () => {
           const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
@@ -199,9 +300,8 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
               syncCorners();
            });
            observer.observe(firstPill.parentElement);
-           syncCorners(); // initial sync
+           syncCorners();
         } else {
-           // fallback if refs aren't populated immediately
            setTimeout(() => {
              const fp = Object.values(overlayPillsRef.current).find(Boolean);
              if (fp && fp.parentElement) {
@@ -216,18 +316,18 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
           clearTimeout(t1); 
           if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
           if (observer) observer.disconnect();
-        }
+        };
       } else {
         const timer = setTimeout(() => {
-          setSectorsVisible(true)
+          setSectorsVisible(true);
           if (variant === 'card') {
-            animFrameRef.current = requestAnimationFrame(loopAnimation)
+            animFrameRef.current = requestAnimationFrame(loopAnimation);
           }
-        }, 1400)
-        return () => { clearTimeout(timer); if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current) }
+        }, 1400);
+        return () => { clearTimeout(timer); if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
       }
     }
-  }, [info.path, variant])
+  }, [info.path, variant, circuitId, info.id, shouldReduceMotion])
 
   const is3D = variant === 'hero-3d'
   
@@ -344,9 +444,9 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   opacity={is3D ? 0.1 : 1}
-                  initial={{ pathLength: 0 }}
+                  initial={shouldReduceMotion ? false : { pathLength: 0 }}
                   animate={{ pathLength: 1 }}
-                  transition={{ duration: 1.4, ease: [0.65, 0, 0.35, 1] }}
+                  transition={shouldReduceMotion ? { duration: 0 } : { duration: 1.4, ease: [0.65, 0, 0.35, 1] }}
                 />
               </svg>
 

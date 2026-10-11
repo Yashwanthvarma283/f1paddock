@@ -3,11 +3,24 @@ import { useDriverStandings } from '@/api/useF1Data'
 import { getTeamMeta } from '@/lib/teams'
 import { CountryFlag } from '@/lib/flags'
 import { Section, SectionHeading, QuietError, Figure } from './primitives'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { TeamLogo } from './TeamLogo'
 
 export const DriversSection: React.FC<{ id?: string }> = ({ id }) => {
   const { data: drivers, isLoading, isError, refetch } = useDriverStandings()
+  const shouldReduceMotion = useReducedMotion()
+  const [itemsVisible, setItemsVisible] = React.useState(Boolean(shouldReduceMotion))
+
+  React.useEffect(() => {
+    if (shouldReduceMotion) {
+      setItemsVisible(true)
+      return
+    }
+    const timer = setTimeout(() => {
+      setItemsVisible(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldReduceMotion])
 
   if (isLoading) {
     return (
@@ -41,10 +54,11 @@ export const DriversSection: React.FC<{ id?: string }> = ({ id }) => {
           return (
             <motion.div 
               key={item.driver.driverId}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={itemsVisible ? { opacity: 1, y: 0 } : undefined}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: idx * 0.05 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4, delay: idx * 0.05 }}
               className="h-full"
             >
               <div 

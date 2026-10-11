@@ -5,7 +5,7 @@ import { useTimezone } from '@/context/TimezoneContext'
 import { CountryFlag } from '@/lib/flags'
 import { Section, SectionHeading, RowSkeleton, QuietError, Figure, Label, orDash } from './primitives'
 import { cn } from '@/lib/utils'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 
 const CompactRaceCard: React.FC<{ race: any }> = ({ race }) => {
   const tz = useTimezone()
@@ -48,6 +48,19 @@ export const CalendarSection: React.FC<{ id?: string }> = ({ id }) => {
   const [expanded, setExpanded] = useState(false)
   const { data: schedule, isLoading, isError, refetch } = useSchedule('current')
   const tz = useTimezone()
+  const shouldReduceMotion = useReducedMotion()
+  const [itemsVisible, setItemsVisible] = useState(Boolean(shouldReduceMotion))
+
+  React.useEffect(() => {
+    if (shouldReduceMotion) {
+      setItemsVisible(true)
+      return
+    }
+    const timer = setTimeout(() => {
+      setItemsVisible(true)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [shouldReduceMotion])
 
   if (isLoading) {
     return (
@@ -101,10 +114,11 @@ export const CalendarSection: React.FC<{ id?: string }> = ({ id }) => {
               {i < completedRounds && (
                 <motion.div 
                   className="absolute inset-0 bg-[var(--accent)]"
-                  initial={{ scaleX: 0 }}
-                  whileInView={{ scaleX: 1 }}
+                  initial={shouldReduceMotion ? false : { scaleX: 0 }}
+                  animate={itemsVisible ? { scaleX: 1 } : undefined}
+                  whileInView={shouldReduceMotion ? undefined : { scaleX: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
+                  transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.5, delay: i * 0.05 }}
                   style={{ transformOrigin: 'left' }}
                 />
               )}
@@ -121,10 +135,11 @@ export const CalendarSection: React.FC<{ id?: string }> = ({ id }) => {
             {next3.map((race, i) => (
               <motion.div 
                 key={race.round}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={itemsVisible ? { opacity: 1, y: 0 } : undefined}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
+                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4, delay: i * 0.1 }}
               >
                 <CompactRaceCard race={race} />
               </motion.div>

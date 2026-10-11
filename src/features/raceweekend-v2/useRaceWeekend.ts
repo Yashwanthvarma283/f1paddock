@@ -9,12 +9,10 @@ import {
 import { jolpicaClient } from '@/api/jolpicaClient'
 import { SessionService } from '@/api/sessionService'
 import { useTimezone } from '@/context/TimezoneContext'
-import { useNow } from '@/hooks/useNow'
 import { resolveCircuit, getWeekendState, buildSessions } from './utils'
 
 export function useRaceWeekend(roundParam?: string) {
   const timezone = useTimezone()
-  const now = useNow(1000)
   const scheduleQuery = useSchedule()
   const season = scheduleQuery.data?.season ?? 'current'
   const driverQuery = useDriverStandings(season)
@@ -41,7 +39,7 @@ export function useRaceWeekend(roundParam?: string) {
   const selectedResultQuery = useQuery({
     queryKey: ['race-weekend-result', season, race?.round],
     queryFn: () => jolpicaClient.getRaceResults(season, race?.round ?? ''),
-    enabled: Boolean(race && getWeekendState(sessions, now) === 'completed' && !lastResultQuery.isPending && !matchingLatestResult),
+    enabled: Boolean(race && getWeekendState(sessions) === 'completed' && !lastResultQuery.isPending && !matchingLatestResult),
     staleTime: 1000 * 60 * 15,
   })
 
@@ -76,14 +74,14 @@ export function useRaceWeekend(roundParam?: string) {
       year: season,
       sessions,
       circuit: resolveCircuit(race),
-      weekendState: getWeekendState(sessions, now),
+      weekendState: getWeekendState(sessions),
       selectedTimezone: timezone.timezone,
       is24h: timezone.is24h,
       drivers: driverQuery.data ?? [],
       constructors: constructorQuery.data ?? [],
       result,
     }
-  }, [constructorQuery.data, driverQuery.data, race, result, season, sessions, now, timezone.timezone, timezone.is24h])
+  }, [constructorQuery.data, driverQuery.data, race, result, season, sessions, timezone.timezone, timezone.is24h])
 
   return {
     model,

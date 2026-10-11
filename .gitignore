@@ -37,3 +37,14 @@ __pycache__/
 
 # Local Reference repositories
 F1-Reference/
+design-reference/
+Formula1.com/
+F1 Images/
+"F1 Images/"
+Layout Reference/
+"Layout Reference/"
+reviews/
+screenshots/
+scratch/
+*.pptx
+
