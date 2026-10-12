@@ -177,8 +177,9 @@ export function formatWeekendSpan(
     const dFri = new Date(dRace.getTime() - 2 * 24 * 60 * 60 * 1000)
     const startDay = new Intl.DateTimeFormat('en-GB', { timeZone, day: 'numeric' }).format(dFri)
     const endDay = new Intl.DateTimeFormat('en-GB', { timeZone, day: 'numeric' }).format(dRace)
-    const month = new Intl.DateTimeFormat('en-GB', { timeZone, month: 'short' }).format(dRace)
-    return `${startDay}-${endDay} ${month}`
+    const startMonth = new Intl.DateTimeFormat('en-GB', { timeZone, month: 'short' }).format(dFri)
+    const endMonth = new Intl.DateTimeFormat('en-GB', { timeZone, month: 'short' }).format(dRace)
+    return startMonth === endMonth ? `${startDay}-${endDay} ${endMonth}` : `${startDay} ${startMonth} - ${endDay} ${endMonth}`
   } catch {
     return ''
   }
@@ -200,8 +201,9 @@ export function formatWeekendRange(
   try {
     const startDay = new Intl.DateTimeFormat('en-GB', { timeZone, day: '2-digit' }).format(dStart)
     const endDay = new Intl.DateTimeFormat('en-GB', { timeZone, day: '2-digit' }).format(dEnd)
-    const month = new Intl.DateTimeFormat('en-GB', { timeZone, month: 'short' }).format(dEnd)
-    return `${startDay} - ${endDay} ${month}`
+    const startMonth = new Intl.DateTimeFormat('en-GB', { timeZone, month: 'short' }).format(dStart)
+    const endMonth = new Intl.DateTimeFormat('en-GB', { timeZone, month: 'short' }).format(dEnd)
+    return startMonth === endMonth ? `${startDay} - ${endDay} ${endMonth}` : `${startDay} ${startMonth} - ${endDay} ${endMonth}`
   } catch {
     return ''
   }

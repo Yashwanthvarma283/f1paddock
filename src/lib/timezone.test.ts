@@ -79,6 +79,9 @@ describe('Timezone utility module', () => {
   it('formats weekend date range correctly', () => {
     const range = formatWeekendRange('2026-10-09T08:00:00Z', '2026-10-11T14:00:00Z', 'UTC')
     expect(range).toContain('09 - 11 Oct')
+
+    const crossMonthRange = formatWeekendRange('2026-10-30T18:00:00Z', '2026-11-01T20:00:00Z', 'UTC')
+    expect(crossMonthRange).toContain('30 Oct - 01 Nov')
   })
 
   it('verifies curated IANA timezone list contains essential Grand Prix regions', () => {

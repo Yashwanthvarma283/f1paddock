@@ -66,7 +66,7 @@ export const Header: React.FC = () => {
 
   const wordmark = (
     <Link
-      to="/test/dashboard"
+      to="/"
       className="font-[family-name:var(--font-display)] font-extrabold uppercase tracking-[-0.01em] text-[22px] leading-none text-[var(--text)] flex items-center gap-1.5 group"
     >
       <span>F1</span>

@@ -18,6 +18,10 @@ interface CircuitOutlineProps {
   circuitName?: string
   className?: string
   variant?: 'card' | 'outline-only' | 'hero-3d'
+  hideSectorLegend?: boolean
+  align?: 'center' | 'left' | 'right'
+  rotation?: number
+  rotateX?: number
   onActiveTurnChange?: (turn: TurnMarker | null) => void
 }
 
@@ -26,6 +30,10 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
   circuitName,
   className = 'w-full h-44 sm:h-52 md:h-60',
   variant = 'card',
+  hideSectorLegend = false,
+  align = 'center',
+  rotation = -10,
+  rotateX = 55,
   onActiveTurnChange,
 }) => {
   const info = getCircuitInfo(circuitId, circuitName)
@@ -209,6 +217,23 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       const loopDurationMs = variant === 'hero-3d' ? 60000 : 8000;
       let lastSector = -1;
 
+      const syncCorners = () => {
+        const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
+        if (firstPill && firstPill.parentElement) {
+          const parentRect = firstPill.parentElement.getBoundingClientRect();
+          Object.keys(anchorRefs.current).forEach(key => {
+            const num = Number(key);
+            const anchor = anchorRefs.current[num];
+            const pill = overlayPillsRef.current[num];
+            if (anchor && pill) {
+              const rect = anchor.getBoundingClientRect();
+              pill.style.left = `${rect.left - parentRect.left + rect.width / 2}px`;
+              pill.style.top = `${rect.top - parentRect.top + rect.height / 2}px`;
+            }
+          });
+        }
+      };
+
       const loopAnimation = (timestamp: number) => {
         if (!startLoopTime) startLoopTime = timestamp;
         const elapsed = timestamp - startLoopTime;
@@ -264,6 +289,8 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
             const currId = activeTurnRef.current ? activeTurnRef.current.number : null;
             const newId = closestTurn ? (closestTurn as TurnMarker).number : null;
             setActiveTurn(currId === newId ? activeTurnRef.current : closestTurn);
+
+            syncCorners();
           }
         }
         animFrameRef.current = requestAnimationFrame(loopAnimation);
@@ -274,24 +301,6 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
           setSectorsVisible(true);
           animFrameRef.current = requestAnimationFrame(loopAnimation);
         }, 500);
-        
-        const syncCorners = () => {
-          const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
-          if (firstPill && firstPill.parentElement) {
-            const parentRect = firstPill.parentElement.getBoundingClientRect();
-            
-            Object.keys(anchorRefs.current).forEach(key => {
-              const num = Number(key);
-              const anchor = anchorRefs.current[num];
-              const pill = overlayPillsRef.current[num];
-              if (anchor && pill) {
-                const rect = anchor.getBoundingClientRect();
-                pill.style.left = `${rect.left - parentRect.left + rect.width / 2}px`;
-                pill.style.top = `${rect.top - parentRect.top + rect.height / 2}px`;
-              }
-            });
-          }
-        };
         
         let observer: ResizeObserver | null = null;
         const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
@@ -334,7 +343,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
   // Parse viewBox so we can map SVG coordinates to HTML % percentages
   const [vbMinX, vbMinY, vbWidth, vbHeight] = (info.viewBox || "0 0 1000 1000").split(' ').map(Number);
 
-  const baseTrackOpacity = is3D ? 0.22 : 1
+  const baseTrackOpacity = is3D ? 0.14 : 1
   const sectorOpacity = is3D ? 0.65 : 1
   
   const LIFT_HEIGHT = 45; // The active sector raises to Z=45px
@@ -353,7 +362,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       } else if (isActive) {
         opacity = isTop ? 0.95 : 0.12; 
       } else {
-        opacity = isTop ? 0.55 : 0.04;
+        opacity = isTop ? 0.18 : 0.015;
       }
       
       const createPath = (s: number, e: number, keySuffix: string) => {
@@ -402,7 +411,17 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
   };
 
   return (
-    <div className={variant === "card" ? "f1-card-accent relative flex flex-col items-center justify-center p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] shadow-[var(--card-shadow)] overflow-hidden transition-all duration-200 hover:shadow-[var(--card-shadow-hover)]" : "relative w-full h-full flex items-center justify-center"} style={is3D ? { transformStyle: 'preserve-3d' } : undefined}>
+    <div
+      className={
+        variant === "card"
+          ? "f1-card-accent relative flex flex-col items-center justify-center p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] shadow-[var(--card-shadow)] overflow-hidden transition-all duration-200 hover:shadow-[var(--card-shadow-hover)]"
+          : cn(
+              "relative w-full h-full flex items-center",
+              align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center'
+            )
+      }
+      style={is3D ? { transformStyle: 'preserve-3d' } : undefined}
+    >
       
       {variant === "card" && (
         <div className="w-full flex items-center justify-between text-xs font-mono mb-1.5 z-10">
@@ -423,10 +442,16 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       )}
 
       {/* SVG Canvas Container */}
-      <div className={cn("relative w-full flex items-center justify-center", !is3D && "my-2")}>
+      <div
+        className={cn(
+          "relative w-full flex items-center",
+          align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center',
+          !is3D && "my-2"
+        )}
+      >
         
         {/* The aspect ratio block that controls the size */}
-        <div className={is3D ? className : "w-full"} style={is3D ? { position: 'relative', transformStyle: 'preserve-3d', transform: 'perspective(800px) rotateX(55deg) rotateZ(-25deg)' } : { position: 'relative' }}>
+        <div className={is3D ? className : "w-full"} style={is3D ? { position: 'relative', transformStyle: 'preserve-3d', transform: `perspective(800px) rotateX(${rotateX}deg) rotateZ(${rotation}deg)` } : { position: 'relative' }}>
           
           {/* Dummy SVG to drive aspect ratio */}
           <svg viewBox={info.viewBox} className="w-full h-full invisible pointer-events-none" fill="none">
@@ -505,85 +530,148 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
 
           {/* Layer: Floating UI (Car and markers) */}
           <div 
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full pointer-events-none"
             style={is3D ? { 
-              // Car and numbers sit exactly on the lifted track's top Z plane!
-              // This completely eliminates parallax displacement so the car is always visually ON the track!
-              transform: `translateZ(${LIFT_HEIGHT}px)`,
               transformStyle: 'preserve-3d',
-              pointerEvents: 'none' 
             } : undefined}
           >
-            <svg viewBox={info.viewBox} className="w-full h-full" fill="none" style={{ overflow: 'visible' }}>
-              <circle cx={info.startFinishPoint.x} cy={info.startFinishPoint.y} r="4.5" fill="var(--surface-1)" stroke="var(--accent)" strokeWidth="2" />
+            {!is3D ? (
+              <svg viewBox={info.viewBox} className="w-full h-full" fill="none" style={{ overflow: 'visible' }}>
+                <circle cx={info.startFinishPoint.x} cy={info.startFinishPoint.y} r="4.5" fill="var(--surface-1)" stroke="var(--accent)" strokeWidth="2" />
 
-              {(variant === "card" || variant === "hero-3d") && snappedTurns.map((turn, idx) => {
-                const isHovered = activeTurn?.number === turn.number
-                const sectorColor = turn.sector === 1 ? 'var(--timing-purple)' : turn.sector === 2 ? 'var(--timing-green)' : 'var(--timing-yellow)'
-                const px = turn.pillX ?? turn.x
-                const py = turn.pillY ?? turn.y
-                const hasOffset = turn.pillX !== undefined && turn.pillY !== undefined
+                {snappedTurns.map((turn, idx) => {
+                  const isHovered = activeTurn?.number === turn.number
+                  const sectorColor = turn.sector === 1 ? 'var(--timing-purple)' : turn.sector === 2 ? 'var(--timing-green)' : 'var(--timing-yellow)'
+                  const px = turn.pillX ?? turn.x
+                  const py = turn.pillY ?? turn.y
+                  const hasOffset = turn.pillX !== undefined && turn.pillY !== undefined
 
-                return (
-                  <motion.g
-                    key={turn.number}
-                    className={is3D ? "" : "cursor-pointer"}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{
-                      delay: is3D ? 0.2 + idx * 0.015 : 1.4 + idx * 0.02,
-                      duration: 0.25,
-                    }}
-                    onMouseEnter={() => !is3D && setActiveTurn(turn)}
-                    onMouseLeave={() => !is3D && setActiveTurn(null)}
-                  >
-                    {hasOffset && (
-                      <line x1={turn.x} y1={turn.y} x2={px} y2={py} stroke={sectorColor} strokeWidth="1" strokeDasharray="2 2" opacity={isHovered ? 0.9 : 0.5} />
-                    )}
-                    {is3D && isHovered && (
-                      <circle cx={turn.x} cy={turn.y} r="8" fill="none" stroke={sectorColor} strokeWidth="1.5" opacity="0.8" />
-                    )}
-                    <circle
-                      cx={turn.x}
-                      cy={turn.y}
-                      r={isHovered ? 4.5 : 2.75}
-                      fill={sectorColor}
-                      stroke="var(--surface-1)"
-                      strokeWidth={isHovered ? 2 : 1}
-                      opacity={isHovered ? 1 : 0.85}
-                      className="transition-all duration-150"
-                    />
-                    
-                    {!is3D && (
+                  return (
+                    <motion.g
+                      key={turn.number}
+                      className="cursor-pointer"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1.4 + idx * 0.02, duration: 0.25 }}
+                      onMouseEnter={() => setActiveTurn(turn)}
+                      onMouseLeave={() => setActiveTurn(null)}
+                    >
+                      {hasOffset && (
+                        <line x1={turn.x} y1={turn.y} x2={px} y2={py} stroke={sectorColor} strokeWidth="1" strokeDasharray="2 2" opacity={isHovered ? 0.9 : 0.5} />
+                      )}
+                      <circle
+                        cx={turn.x}
+                        cy={turn.y}
+                        r={isHovered ? 4.5 : 2.75}
+                        fill={sectorColor}
+                        stroke="var(--surface-1)"
+                        strokeWidth={isHovered ? 2 : 1}
+                        opacity={isHovered ? 1 : 0.85}
+                        className="transition-all duration-150"
+                      />
                       <g>
                         <rect x={px - (turn.number >= 10 ? 26 : 22) / 2} y={py - 20 / 2} width={turn.number >= 10 ? 26 : 22} height={20} rx="5" fill="#0B0B0F" stroke={isHovered ? 'var(--text)' : sectorColor} strokeWidth={isHovered ? 2 : 1.2} className="transition-all duration-150" />
                         <text x={px} y={py + 4.5} textAnchor="middle" fontSize="13" fontWeight="bold" fontFamily="var(--font-mono)" fill="#FFFFFF" pointerEvents="none">
                           {turn.number}
                         </text>
                       </g>
-                    )}
-                  </motion.g>
-                )
-              })}
+                    </motion.g>
+                  )
+                })}
 
-              {(variant === "card" || variant === "hero-3d") && (
                 <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.5 }}>
                   <circle ref={carOuterRef} cx="-100" cy="-100" r="7" fill="var(--accent)" opacity="0.35" />
                   <circle ref={carInnerRef} cx="-100" cy="-100" r="3.5" fill="var(--surface-1)" stroke="var(--accent)" strokeWidth="1.5" />
                 </motion.g>
-              )}
-              {/* Invisible anchor dots for 2D pills overlay */}
-              {is3D && snappedTurns.map((turn) => (
-                 <circle
-                   key={turn.number}
-                   ref={el => { anchorRefs.current[turn.number] = el; }}
-                   cx={turn.pillX ?? turn.x}
-                   cy={turn.pillY ?? turn.y}
-                   r="1"
-                   fill="transparent"
-                 />
-              ))}
-            </svg>
+              </svg>
+            ) : (
+              <>
+                {/* Car layer always follows the lifted level (Z=45px) */}
+                <div
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  style={{
+                    transform: `translateZ(${LIFT_HEIGHT}px)`,
+                    transformStyle: 'preserve-3d',
+                  }}
+                >
+                  <svg viewBox={info.viewBox} className="w-full h-full" fill="none" style={{ overflow: 'visible' }}>
+                    <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.5 }}>
+                      <circle ref={carOuterRef} cx="-100" cy="-100" r="7" fill="var(--accent)" opacity="0.35" />
+                      <circle ref={carInnerRef} cx="-100" cy="-100" r="3.5" fill="var(--surface-1)" stroke="var(--accent)" strokeWidth="1.5" />
+                    </motion.g>
+                  </svg>
+                </div>
+
+                {/* Sectors 1, 2, 3: Turn markers are on the normal level (Z=0px) and elevate to Z=45px with their active sector */}
+                {([1, 2, 3] as const).map((sec) => {
+                  const isSectorActive = heroStage === sec || shouldReduceMotion;
+                  const sectorTurns = snappedTurns.filter((t) => t.sector === sec);
+
+                  return (
+                    <div
+                      key={`sector-${sec}-markers`}
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{
+                        transform: isSectorActive ? `translateZ(${LIFT_HEIGHT}px)` : 'translateZ(0px)',
+                        transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        transformStyle: 'preserve-3d',
+                      }}
+                    >
+                      <svg viewBox={info.viewBox} className="w-full h-full" fill="none" style={{ overflow: 'visible' }}>
+                        {sec === 1 && (
+                          <circle cx={info.startFinishPoint.x} cy={info.startFinishPoint.y} r="4.5" fill="var(--surface-1)" stroke="var(--accent)" strokeWidth="2" />
+                        )}
+                        {sectorTurns.map((turn, idx) => {
+                          const isHovered = activeTurn?.number === turn.number;
+                          const sectorColor = turn.sector === 1 ? 'var(--timing-purple)' : turn.sector === 2 ? 'var(--timing-green)' : 'var(--timing-yellow)';
+                          const px = turn.pillX ?? turn.x;
+                          const py = turn.pillY ?? turn.y;
+                          const hasOffset = turn.pillX !== undefined && turn.pillY !== undefined;
+
+                          return (
+                            <motion.g
+                              key={turn.number}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{
+                                delay: 0.2 + idx * 0.015,
+                                duration: 0.25,
+                              }}
+                            >
+                              {hasOffset && (
+                                <line x1={turn.x} y1={turn.y} x2={px} y2={py} stroke={sectorColor} strokeWidth="1" strokeDasharray="2 2" opacity={isHovered ? 0.9 : (isSectorActive ? 0.5 : 0.15)} />
+                              )}
+                              {isHovered && (
+                                <circle cx={turn.x} cy={turn.y} r="8" fill="none" stroke={sectorColor} strokeWidth="1.5" opacity="0.8" />
+                              )}
+                              <circle
+                                cx={turn.x}
+                                cy={turn.y}
+                                r={isHovered ? 4.5 : 2.75}
+                                fill={sectorColor}
+                                stroke="var(--surface-1)"
+                                strokeWidth={isHovered ? 2 : 1}
+                                opacity={isHovered ? 1 : (isSectorActive ? 0.85 : 0.25)}
+                                className="transition-all duration-150"
+                              />
+
+                              {/* Invisible anchor dot for projecting the 2D billboard pill */}
+                              <circle
+                                ref={(el) => { anchorRefs.current[turn.number] = el; }}
+                                cx={turn.pillX ?? turn.x}
+                                cy={turn.pillY ?? turn.y}
+                                r="1"
+                                fill="transparent"
+                              />
+                            </motion.g>
+                          );
+                        })}
+                      </svg>
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
         </div>
 
@@ -592,6 +680,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
           <div className="absolute inset-0 z-20 pointer-events-none">
             {snappedTurns.map((turn) => {
               const isActive = activeTurn?.number === turn.number;
+              const isSecActive = heroStage === turn.sector || shouldReduceMotion;
               const sectorColor = turn.sector === 1 ? 'var(--timing-purple)' : turn.sector === 2 ? 'var(--timing-green)' : 'var(--timing-yellow)';
               const isDoubleDigit = turn.number >= 10;
 
@@ -603,15 +692,15 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
                     "absolute flex items-center justify-center font-mono font-bold rounded-[3px] pointer-events-none transition-all duration-150",
                     isActive
                       ? "z-30 text-[12px] text-white bg-[#0B0B0F] shadow-lg scale-125"
-                      : "z-10 text-[10px] text-white/90 bg-[#0B0B0F]/85 shadow-sm"
+                      : (isSecActive ? "z-10 text-[10px] text-white/90 bg-[#0B0B0F]/85 shadow-sm" : "z-0 text-[10px] text-white/40 bg-[#0B0B0F]/50 shadow-none")
                   )}
                   style={{
                     width: isDoubleDigit ? (isActive ? 25 : 21) : (isActive ? 21 : 18),
                     height: isActive ? 19 : 15,
-                    border: isActive ? `2px solid ${sectorColor}` : `1px solid ${sectorColor}`,
+                    border: isActive ? `2px solid ${sectorColor}` : (isSecActive ? `1px solid ${sectorColor}` : `1px solid ${sectorColor}44`),
                     boxShadow: isActive ? `0 0 10px ${sectorColor}` : undefined,
                     transform: `translate(-50%, -50%)`,
-                    opacity: sectorsVisible ? (isActive ? 1 : 0.78) : 0,
+                    opacity: sectorsVisible ? (isActive ? 1 : (isSecActive ? 0.78 : 0.25)) : 0,
                   }}
                 >
                   {turn.number}
@@ -622,7 +711,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
         )}
 
         {/* Floating Sector Telemetry Legend in Hero 3D */}
-        {is3D && (
+        {is3D && !hideSectorLegend && (
           <div className="absolute top-2 right-2 sm:top-3 sm:right-4 z-20 flex items-center gap-2 sm:gap-2.5 px-2.5 py-1 rounded-[4px] bg-[var(--surface-1)]/85 border border-[var(--border)] backdrop-blur-md text-[10px] sm:text-[11px] font-mono font-semibold uppercase tracking-wider shadow-sm pointer-events-none">
             <span className={cn("flex items-center gap-1 transition-opacity", (heroStage === 1 || shouldReduceMotion) ? "text-[var(--timing-purple)] opacity-100 font-bold" : "text-[var(--timing-purple)] opacity-60")}>
               <span className={cn("w-1.5 h-1.5 rounded-full bg-[var(--timing-purple)]", heroStage === 1 && !shouldReduceMotion && "animate-pulse")} />

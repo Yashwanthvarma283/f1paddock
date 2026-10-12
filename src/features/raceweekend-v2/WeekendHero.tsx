@@ -79,7 +79,7 @@ export const WeekendHero: React.FC<WeekendHeroProps> = ({ model }) => {
       <section id="weekend" aria-labelledby="weekend-heading" className="rw-hero rw-anchor">
         <span data-rw-spy className="rw-spy" aria-hidden="true" />
         <div className="rw-container">
-          <Link to="/test/dashboard" className="rw-back-link dv2-link">
+          <Link to="/" className="rw-back-link dv2-link">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back to dashboard
           </Link>

@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { QueryClient } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
@@ -11,11 +11,10 @@ import { HomePage } from '@/pages/HomePage'
 import { CalendarPage } from '@/pages/CalendarPage'
 import { RacePage } from '@/pages/RacePage'
 import { DriversPage, TeamsPage } from '@/pages/Placeholders'
-import { TestDashboardV1 } from '@/pages/TestDashboardV1'
-import { TestDashboardV2 } from '@/pages/TestDashboardV2'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const RaceWeekendPage = lazy(() => import('@/pages/RaceWeekendPage'))
+const TimerLabPage = lazy(() => import('@/pages/TimerLabPage'))
 
 // Configure TanStack Query with 24h cache persistence in localStorage
 const queryClient = new QueryClient({
@@ -53,13 +52,12 @@ const AnimatedRoutes: React.FC = () => {
         className="w-full flex-1"
       >
         <Routes location={location}>
-          <Route path="/" element={<HomePage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/drivers" element={<DriversPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/race/:id" element={<RacePage />} />
           {/* Fallback to Home */}
-          <Route path="*" element={<HomePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -82,11 +80,14 @@ export const App: React.FC = () => {
                 </div>
               }>
                 <Routes>
-                  <Route path="/test/dashboard" element={<TestDashboardV2 />} />
-                  <Route path="/test/dashboard/v1" element={<TestDashboardV1 />} />
-                  <Route path="/test/dashboard/v2" element={<TestDashboardV2 />} />
+                  {/* Main Dashboard - permanently v2 */}
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/test/dashboard" element={<HomePage />} />
+                  <Route path="/test/dashboard/v1" element={<HomePage />} />
+                  <Route path="/test/dashboard/v2" element={<HomePage />} />
                   <Route path="/test/raceweekend" element={<RaceWeekendPage />} />
                   <Route path="/test/raceweekend/:round" element={<RaceWeekendPage />} />
+                  <Route path="/test/timer" element={<TimerLabPage />} />
                   <Route path="*" element={
                     <Layout>
                       <AnimatedRoutes />

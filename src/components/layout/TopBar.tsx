@@ -118,22 +118,7 @@ export const TopBar: React.FC = () => {
 
           {/* Action Tools: Search, Timezone, Theme Toggle */}
           <div className="flex items-center gap-2">
-            {/* Test Dashboard Link - Premium Preview Badge */}
-            <Link
-              to="/test/dashboard"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md
-                         bg-gradient-to-r from-[var(--accent)] to-[var(--timing-purple)]
-                         text-white text-xs font-bold tracking-wide uppercase
-                         hover:shadow-lg hover:shadow-[var(--accent-glow)] transition-all duration-200
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              title="View Premium Dashboard Preview"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-              </span>
-              Premium Preview
-            </Link>
+
             {/* Global Command Palette Trigger with Smooth Expansion */}
             <button
               onClick={() => setIsSearchOpen(true)}
