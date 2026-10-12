@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react'
+import React, { useCallback } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { flushSync } from 'react-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -13,7 +13,7 @@ import { useTimezone } from '@/context/TimezoneContext'
 import { CountryFlag } from '@/lib/flags'
 import { StartLightsTimer } from './StartLightsTimer'
 import { PrimaryButton, QuietError, EmptyNote, orDash } from './primitives'
-import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
 import { CircuitOutline } from '@/features/hero/CircuitOutline'
 import { useNow } from '@/hooks/useNow'
 
@@ -50,26 +50,6 @@ export const DashboardHero: React.FC<{ id?: string; timerVariant?: string }> = (
     refetch()
     queryClient.invalidateQueries({ queryKey: ['f1'] })
   }, [refetch, queryClient])
-
-  const sectionRef = useRef<HTMLElement>(null)
-  const [heroHeight, setHeroHeight] = useState<number | null>(null)
-
-  useEffect(() => {
-    const el = sectionRef.current
-    if (!el) return
-    const updateHeight = () => {
-      setHeroHeight(el.offsetHeight)
-    }
-    updateHeight()
-    const ro = new ResizeObserver(updateHeight)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [schedule])
-
-  const shouldReduceMotion = useReducedMotion()
-  const { scrollY } = useScroll()
-  // Fade out smoothly as user scrolls down: 1 at top -> 0.7 at 150px -> 0.35 at 350px -> 0 by 600px
-  const trackOpacity = useTransform(scrollY, [0, 150, 350, 600], [1, 0.7, 0.35, 0])
 
   if (isLoading) {
     return (
@@ -198,15 +178,14 @@ export const DashboardHero: React.FC<{ id?: string; timerVariant?: string }> = (
   }
 
   return (
-    <>
-      {/* Background 3D Circuit Outline - Stays fixed in place on screen and fades out as user scrolls down */}
-      <motion.div
+    <section
+      id={id}
+      className="relative w-full bg-[var(--bg)] text-[var(--text)] border-b border-[var(--border-subtle)] pt-9 sm:pt-12 md:pt-14 lg:pt-16 pb-4 sm:pb-5 md:pb-5 lg:pb-6 overflow-hidden scroll-mt-[128px]"
+    >
+      {/* Background 3D Circuit Outline */}
+      <div
         aria-hidden="true"
-        className="fixed top-16 left-0 md:left-[1%] lg:left-[2%] w-full md:w-[68%] lg:w-[62%] z-0 pointer-events-none flex items-center justify-start pl-0 sm:pl-2 md:pl-4 pt-6 sm:pt-8 md:pt-10 lg:pt-12 overflow-hidden"
-        style={{
-          height: heroHeight ? `${heroHeight}px` : 'min(700px, 80vh)',
-          opacity: shouldReduceMotion ? 1 : trackOpacity,
-        }}
+        className="absolute inset-0 z-0 pointer-events-none w-full md:w-[68%] lg:w-[62%] h-full flex items-center justify-start pl-0 sm:pl-2 md:pl-4 pt-6 sm:pt-8 md:pt-10 lg:pt-12 overflow-hidden"
       >
         <CircuitOutline
           circuitId={nextRace.Circuit?.circuitId}
@@ -218,13 +197,7 @@ export const DashboardHero: React.FC<{ id?: string; timerVariant?: string }> = (
           hideSectorLegend={true}
           className="w-[94%] h-[94%] sm:w-[89%] sm:h-[89%] md:w-[85%] md:h-[85%] text-[var(--text)] object-contain"
         />
-      </motion.div>
-
-      <section
-        ref={sectionRef}
-        id={id}
-        className="relative w-full bg-transparent text-[var(--text)] border-b border-[var(--border-subtle)] pt-9 sm:pt-12 md:pt-14 lg:pt-16 pb-4 sm:pb-5 md:pb-5 lg:pb-6 overflow-x-clip scroll-mt-[128px]"
-      >
+      </div>
 
       <div className="relative z-10 max-w-[1560px] mx-auto px-5 md:px-8 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-4 sm:gap-y-5 lg:gap-y-5 lg:gap-x-8 items-start mb-0 sm:mb-1 lg:mb-1">
@@ -380,7 +353,6 @@ export const DashboardHero: React.FC<{ id?: string; timerVariant?: string }> = (
         </div>
       </div>
     </section>
-  </>
   )
 }
 
