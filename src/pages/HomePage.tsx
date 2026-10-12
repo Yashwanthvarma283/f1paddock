@@ -39,7 +39,7 @@ export const HomePage: React.FC = () => {
           <RacingLine className="h-[16px] md:h-[24px] opacity-100" />
         </div>
 
-        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col mb-10 md:mb-14 lg:mb-[72px]">
+        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col mb-8 md:mb-10 lg:mb-12">
           <DriversSection id="drivers" />
         </div>
       </main>

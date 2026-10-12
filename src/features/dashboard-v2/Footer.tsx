@@ -1,9 +1,11 @@
 import React from 'react'
 
+const CURRENT_YEAR = new Date().getFullYear()
+
 export const Footer: React.FC = () => {
   return (
     <footer className="w-full bg-[var(--surface-1)] border-t border-[var(--border-subtle)] mt-auto text-[var(--text)]">
-      <div className="max-w-[1560px] mx-auto px-5 md:px-8 lg:px-12 py-16 md:py-24">
+      <div className="max-w-[1560px] mx-auto px-5 md:px-8 lg:px-12 pt-8 md:pt-10 pb-6 md:pb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           
           <div className="md:col-span-2 flex flex-col gap-6">
@@ -46,9 +48,9 @@ export const Footer: React.FC = () => {
           
         </div>
         
-        <div className="mt-16 pt-8 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="mt-8 md:mt-10 pt-5 md:pt-6 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row justify-between items-center gap-4">
           <span className="text-[13px] text-[var(--text-muted)]">
-            © {new Date().getFullYear()} F1 Paddock (f1paddock.live). Data is provided for educational purposes.
+            © {CURRENT_YEAR} F1 Paddock (f1paddock.live). Data is provided for educational purposes.
           </span>
           <div className="text-[13px] text-[var(--text-muted)]">
             F1, FORMULA ONE, FORMULA 1, FIA FORMULA ONE WORLD CHAMPIONSHIP, GRAND PRIX and related marks are trade marks of Formula One Licensing B.V.
