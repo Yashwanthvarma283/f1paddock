@@ -73,3 +73,6 @@ export function useCircuitPreviousEdition(circuitId?: string, currentSeason?: nu
     staleTime: 1000 * 60 * 60 * 24, // 24 hours
   })
 }
+
+export { useSeasonInsights } from './useSeasonInsights'
+

@@ -432,3 +432,52 @@
   }
 }
 
+/* -----------------------------------------------------------------------------
+   Driver Insights — scoped styles
+   -------------------------------------------------------------------------- */
+
+[data-dv2] .dv2-insights-panel {
+  min-height: 440px;
+}
+
+@keyframes dv2-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+[data-dv2] .dv2-bar-animated {
+  transform-origin: left;
+  animation: dv2-bar-grow 320ms var(--ease-out) backwards;
+  animation-delay: calc(var(--bar-i, 0) * 40ms);
+}
+
+@keyframes dv2-sparkline-draw {
+  from {
+    stroke-dashoffset: 600;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+[data-dv2] .dv2-sparkline-path {
+  stroke-dasharray: 600;
+  animation: dv2-sparkline-draw 700ms var(--ease-out) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dv2] .dv2-bar-animated {
+    animation: none !important;
+    transform: scaleX(1) !important;
+  }
+  [data-dv2] .dv2-sparkline-path {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
+
