@@ -62,6 +62,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
   const carInnerRef = useRef<SVGCircleElement>(null)
   const anchorRefs = useRef<Record<number, SVGCircleElement | null>>({})
   const overlayPillsRef = useRef<Record<number, HTMLDivElement | null>>({})
+  const rootContainerRef = useRef<HTMLDivElement>(null)
 
   const shouldReduceMotion = useReducedMotion()
 
@@ -216,6 +217,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       let startLoopTime: number | null = null;
       const loopDurationMs = variant === 'hero-3d' ? 60000 : 8000;
       let lastSector = -1;
+      let isVisible = true;
 
       const syncCorners = () => {
         const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
@@ -235,6 +237,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       };
 
       const loopAnimation = (timestamp: number) => {
+        if (!isVisible) return;
         if (!startLoopTime) startLoopTime = timestamp;
         const elapsed = timestamp - startLoopTime;
         
@@ -277,66 +280,111 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
                lastSector = currentSector;
             }
 
-            let closestTurn: TurnMarker | null = null;
-            let minDistance = 25;
-            snappedTurnsRef.current.forEach(turn => {
-              const dist = Math.hypot(turn.x - pt.x, turn.y - pt.y);
-              if (dist < minDistance) {
-                minDistance = dist;
-                closestTurn = turn;
+            if (onActiveTurnChange) {
+              let closestTurn: TurnMarker | null = null;
+              let minDistance = 25;
+              snappedTurnsRef.current.forEach(turn => {
+                const dist = Math.hypot(turn.x - pt.x, turn.y - pt.y);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  closestTurn = turn;
+                }
+              });
+              const currId = activeTurnRef.current ? activeTurnRef.current.number : null;
+              const newId = closestTurn ? (closestTurn as TurnMarker).number : null;
+              if (currId !== newId) {
+                setActiveTurn(closestTurn);
               }
-            });
-            const currId = activeTurnRef.current ? activeTurnRef.current.number : null;
-            const newId = closestTurn ? (closestTurn as TurnMarker).number : null;
-            setActiveTurn(currId === newId ? activeTurnRef.current : closestTurn);
-
-            syncCorners();
+            }
           }
         }
-        animFrameRef.current = requestAnimationFrame(loopAnimation);
+        if (isVisible) {
+          animFrameRef.current = requestAnimationFrame(loopAnimation);
+        }
       };
+
+      let observer: ResizeObserver | null = null;
+      let visibilityObserver: IntersectionObserver | null = null;
 
       if (variant === 'hero-3d') {
         const t1 = setTimeout(() => {
           setSectorsVisible(true);
-          animFrameRef.current = requestAnimationFrame(loopAnimation);
+          if (isVisible && !animFrameRef.current) {
+            animFrameRef.current = requestAnimationFrame(loopAnimation);
+          }
         }, 500);
         
-        let observer: ResizeObserver | null = null;
         const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
-        if (firstPill && firstPill.parentElement) {
-           observer = new ResizeObserver(() => {
-              syncCorners();
-           });
-           observer.observe(firstPill.parentElement);
-           syncCorners();
-        } else {
-           setTimeout(() => {
-             const fp = Object.values(overlayPillsRef.current).find(Boolean);
-             if (fp && fp.parentElement) {
-                observer = new ResizeObserver(() => syncCorners());
-                observer.observe(fp.parentElement);
-                syncCorners();
-             }
-           }, 100);
+        const container = firstPill?.parentElement || rootContainerRef.current;
+        if (container) {
+          observer = new ResizeObserver(() => {
+            syncCorners();
+          });
+          observer.observe(container);
+          // Initial coordinate calculation
+          requestAnimationFrame(() => syncCorners());
+        }
+
+        if (rootContainerRef.current) {
+          visibilityObserver = new IntersectionObserver(([entry]) => {
+            const nextVisible = entry.isIntersecting;
+            if (nextVisible === isVisible) return;
+            isVisible = nextVisible;
+            if (!isVisible) {
+              if (animFrameRef.current) {
+                cancelAnimationFrame(animFrameRef.current);
+                animFrameRef.current = null;
+              }
+            } else {
+              if (!animFrameRef.current) {
+                animFrameRef.current = requestAnimationFrame(loopAnimation);
+              }
+            }
+          }, { threshold: 0.05 });
+          visibilityObserver.observe(rootContainerRef.current);
         }
         
         return () => { 
           clearTimeout(t1); 
           if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
           if (observer) observer.disconnect();
+          if (visibilityObserver) visibilityObserver.disconnect();
         };
       } else {
         const timer = setTimeout(() => {
           setSectorsVisible(true);
-          if (variant === 'card') {
+          if (variant === 'card' && isVisible && !animFrameRef.current) {
             animFrameRef.current = requestAnimationFrame(loopAnimation);
           }
         }, 1400);
-        return () => { clearTimeout(timer); if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
+
+        if (rootContainerRef.current) {
+          visibilityObserver = new IntersectionObserver(([entry]) => {
+            const nextVisible = entry.isIntersecting;
+            if (nextVisible === isVisible) return;
+            isVisible = nextVisible;
+            if (!isVisible) {
+              if (animFrameRef.current) {
+                cancelAnimationFrame(animFrameRef.current);
+                animFrameRef.current = null;
+              }
+            } else {
+              if (!animFrameRef.current && variant === 'card') {
+                animFrameRef.current = requestAnimationFrame(loopAnimation);
+              }
+            }
+          }, { threshold: 0.05 });
+          visibilityObserver.observe(rootContainerRef.current);
+        }
+
+        return () => { 
+          clearTimeout(timer); 
+          if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+          if (visibilityObserver) visibilityObserver.disconnect();
+        };
       }
     }
-  }, [info.path, variant, circuitId, info.id, shouldReduceMotion])
+  }, [info.path, variant, circuitId, info.id, shouldReduceMotion, onActiveTurnChange])
 
   const is3D = variant === 'hero-3d'
   
@@ -412,6 +460,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
 
   return (
     <div
+      ref={rootContainerRef}
       className={
         variant === "card"
           ? "f1-card-accent relative flex flex-col items-center justify-center p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] shadow-[var(--card-shadow)] overflow-hidden transition-all duration-200 hover:shadow-[var(--card-shadow-hover)]"
@@ -420,7 +469,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
               align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center'
             )
       }
-      style={is3D ? { transformStyle: 'preserve-3d' } : undefined}
+      style={is3D ? { transformStyle: 'preserve-3d', willChange: 'transform', contain: 'paint' } : undefined}
     >
       
       {variant === "card" && (
@@ -451,7 +500,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       >
         
         {/* The aspect ratio block that controls the size */}
-        <div className={is3D ? className : "w-full"} style={is3D ? { position: 'relative', transformStyle: 'preserve-3d', transform: `perspective(800px) rotateX(${rotateX}deg) rotateZ(${rotation}deg)` } : { position: 'relative' }}>
+        <div className={is3D ? className : "w-full"} style={is3D ? { position: 'relative', transformStyle: 'preserve-3d', transform: `perspective(800px) rotateX(${rotateX}deg) rotateZ(${rotation}deg)`, willChange: 'transform', contain: 'paint' } : { position: 'relative' }}>
           
           {/* Dummy SVG to drive aspect ratio */}
           <svg viewBox={info.viewBox} className="w-full h-full invisible pointer-events-none" fill="none">

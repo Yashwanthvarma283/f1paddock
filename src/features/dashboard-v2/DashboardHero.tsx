@@ -185,7 +185,7 @@ export const DashboardHero: React.FC<{ id?: string; timerVariant?: string }> = (
       {/* Background 3D Circuit Outline */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-0 pointer-events-none w-full md:w-[68%] lg:w-[62%] h-full flex items-center justify-start pl-0 sm:pl-2 md:pl-4 pt-6 sm:pt-8 md:pt-10 lg:pt-12 overflow-hidden"
+        className="absolute inset-0 z-0 pointer-events-none w-full md:w-[68%] lg:w-[62%] h-full flex items-center justify-start pl-0 sm:pl-2 md:pl-4 pt-6 sm:pt-8 md:pt-10 lg:pt-12 overflow-hidden [contain:paint] [will-change:transform]"
       >
         <CircuitOutline
           circuitId={nextRace.Circuit?.circuitId}

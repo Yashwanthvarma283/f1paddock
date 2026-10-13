@@ -14,15 +14,18 @@ export const BackToTop: React.FC = () => {
   const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
-    const onScroll = () => {
-      const hero = document.getElementById('next-race')
-      const heroBottom = hero ? hero.getBoundingClientRect().bottom : 500
-      setVisible(heroBottom < 0)
-    }
+    const hero = document.getElementById('next-race')
+    if (!hero) return
 
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0)
+      },
+      { threshold: 0 }
+    )
+
+    observer.observe(hero)
+    return () => observer.disconnect()
   }, [])
 
   const scrollToTop = () => {

@@ -195,7 +195,7 @@ export const StartLightsTimer: React.FC<StartLightsTimerProps> = ({
     <div
       data-testid="start-lights-timer"
       className={cn(
-        'flex flex-col bg-[var(--surface-1)] border border-[var(--border)] rounded-[4px] p-5 lg:p-6 backdrop-blur-md w-full shadow-sm text-[var(--text)]',
+        'flex flex-col bg-[var(--surface-1)] border border-[var(--border)] rounded-[4px] p-5 lg:p-6 w-full shadow-sm text-[var(--text)]',
         className
       )}
     >
