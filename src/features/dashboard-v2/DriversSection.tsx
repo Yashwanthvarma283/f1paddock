@@ -7,7 +7,7 @@ import { useSeasonInsights } from '@/api/useSeasonInsights'
 import { getTeamMeta } from '@/lib/teams'
 import { TeamLogo } from './TeamLogo'
 import { DriverAvatar } from './DriverAvatar'
-import { Figure, Label } from './primitives'
+import { SectionHeading, Figure, Label } from './primitives'
 import { cn } from '@/lib/utils'
 import type { SpotlightHistoryPoint } from './insights/types'
 
@@ -170,27 +170,23 @@ export const DriversSection: React.FC<{ id?: string }> = ({ id = 'drivers' }) =>
     <section
       ref={sectionRef}
       id={id}
-      className="relative w-full text-[var(--text)] py-8 md:py-12 scroll-mt-[128px]"
+      className="relative w-full text-[var(--text)] scroll-mt-[80px]"
     >
-      {/* 1. Header with dynamic eyebrow and section heading */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6 border-b border-[var(--border-subtle)] pb-4">
-        <div>
-          <span className="text-[11px] font-mono uppercase tracking-[0.1em] font-semibold text-[var(--accent)] block mb-1">
-            {completedRounds > 0 ? `After Round ${completedRounds}` : 'Season Intel'}
-          </span>
-          <h2 className="font-[family-name:var(--font-display)] font-extrabold text-[24px] md:text-[28px] uppercase tracking-tight text-[var(--text)] leading-none">
-            Driver Insights
-          </h2>
-        </div>
-
-        <Link
-          to="/drivers"
-          className="dv2-link text-[12px] font-semibold text-[var(--text-muted)] hover:text-[var(--text)] inline-flex items-center gap-1.5 transition-colors self-start sm:self-auto"
-        >
-          <span>All drivers</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
+      {/* 1. Sticky Section Heading */}
+      <SectionHeading
+        subtitle={completedRounds > 0 ? `After Round ${completedRounds}` : 'Season Intel'}
+        action={
+          <Link
+            to="/drivers"
+            className="dv2-link text-[12px] font-semibold text-[var(--text-muted)] hover:text-[var(--text)] inline-flex items-center gap-1.5 transition-colors self-start sm:self-auto"
+          >
+            <span>All drivers</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        }
+      >
+        Driver Insights
+      </SectionHeading>
 
       {/* 2. Loading State */}
       {isLoading && (
