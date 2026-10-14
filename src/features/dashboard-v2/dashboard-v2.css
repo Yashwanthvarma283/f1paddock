@@ -49,6 +49,12 @@
   border-radius: 9999px;
 }
 
+/* Off-screen section containment for smooth 60fps scrolling */
+[data-dv2] .dv2-section-contain {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 700px;
+}
+
 /* -----------------------------------------------------------------------------
    The one accent rule — full-width red bar with a sheared right end
    -------------------------------------------------------------------------- */
@@ -192,240 +198,240 @@
   }
 }
 
-/* 5 Lights: Total 18s (0s, 3s, 6s, 9s, 12s -> 17s all ON -> 17s-18s all OFF) */
+/* 5 Lights: Total 8s (0s, 1s, 2s, 3s, 4s -> 7s all ON -> 7s-8s all OFF) */
 @keyframes dv2-gantry-seq-5-0 {
-  0%, 94.44% {
+  0%, 87.49% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  94.45%, 100% {
+  87.5%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-5-1 {
-  0%, 16.66% {
+  0%, 12.49% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  16.67%, 94.44% {
+  12.5%, 87.49% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  94.45%, 100% {
+  87.5%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-5-2 {
-  0%, 33.33% {
+  0%, 24.99% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  33.34%, 94.44% {
+  25%, 87.49% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  94.45%, 100% {
+  87.5%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-5-3 {
-  0%, 49.99% {
+  0%, 37.49% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  50%, 94.44% {
+  37.5%, 87.49% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  94.45%, 100% {
+  87.5%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-5-4 {
-  0%, 66.66% {
+  0%, 49.99% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  66.67%, 94.44% {
+  50%, 87.49% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  94.45%, 100% {
+  87.5%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 
-/* 4 Lights: Total 15s (0s, 3s, 6s, 9s -> 14s all ON -> 14s-15s all OFF) */
+/* 4 Lights: Total 7s (0s, 1s, 2s, 3s -> 6s all ON -> 6s-7s all OFF) */
 @keyframes dv2-gantry-seq-4-0 {
-  0%, 93.33% {
+  0%, 85.71% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  93.34%, 100% {
+  85.72%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-4-1 {
-  0%, 19.99% {
+  0%, 14.28% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  20%, 93.33% {
+  14.29%, 85.71% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  93.34%, 100% {
+  85.72%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-4-2 {
-  0%, 39.99% {
+  0%, 28.56% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  40%, 93.33% {
+  28.57%, 85.71% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  93.34%, 100% {
+  85.72%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-4-3 {
-  0%, 59.99% {
+  0%, 42.85% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  60%, 93.33% {
+  42.86%, 85.71% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  93.34%, 100% {
+  85.72%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 
-/* 3 Lights: Total 12s (0s, 3s, 6s -> 11s all ON -> 11s-12s all OFF) */
+/* 3 Lights: Total 6s (0s, 1s, 2s -> 5s all ON -> 5s-6s all OFF) */
 @keyframes dv2-gantry-seq-3-0 {
-  0%, 91.66% {
+  0%, 83.33% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  91.67%, 100% {
+  83.34%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-3-1 {
-  0%, 24.99% {
+  0%, 16.66% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  25%, 91.66% {
+  16.67%, 83.33% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  91.67%, 100% {
+  83.34%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-3-2 {
-  0%, 49.99% {
+  0%, 33.32% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  50%, 91.66% {
+  33.33%, 83.33% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  91.67%, 100% {
+  83.34%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 
-/* 2 Lights: Total 9s (0s, 3s -> 8s all ON -> 8s-9s all OFF) */
+/* 2 Lights: Total 5s (0s, 1s -> 4s all ON -> 4s-5s all OFF) */
 @keyframes dv2-gantry-seq-2-0 {
-  0%, 88.88% {
+  0%, 79.99% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  88.89%, 100% {
+  80%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 @keyframes dv2-gantry-seq-2-1 {
-  0%, 33.32% {
+  0%, 19.99% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
-  33.33%, 88.88% {
+  20%, 79.99% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  88.89%, 100% {
+  80%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;
   }
 }
 
-/* 1 Light: Total 6s (0s -> 5s all ON -> 5s-6s all OFF) */
+/* 1 Light: Total 4s (0s -> 3s all ON -> 3s-4s all OFF) */
 @keyframes dv2-gantry-seq-1-0 {
-  0%, 83.32% {
+  0%, 74.99% {
     background-color: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 10px rgba(235, 0, 40, 0.7);
   }
-  83.33%, 100% {
+  75%, 100% {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: var(--border-subtle);
     box-shadow: none;

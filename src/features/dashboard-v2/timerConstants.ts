@@ -14,11 +14,11 @@ export function getRingCycleDurationMs(nonCompleteCount: number): number {
 }
 
 // F1 Gantry Start Lights Timing:
-// Step interval = 3000ms (3s per light set)
-// Hold all on = 5000ms (5s hold with all lights on)
+// Step interval = 1000ms (1s per light set, reduced from 2s to 1s)
+// Hold all on = 3000ms (3s hold with all lights on, reduced from 5s to 3s)
 // All off pause = 1000ms (1s blackout before repeat)
-export const LIGHT_STEP_DURATION_MS = 3000
-export const ALL_LIT_HOLD_MS = 5000
+export const LIGHT_STEP_DURATION_MS = 1000
+export const ALL_LIT_HOLD_MS = 3000
 export const ALL_OFF_PAUSE_MS = 1000
 
 export function getGantryCycleDurationMs(nonCompleteCount: number): number {

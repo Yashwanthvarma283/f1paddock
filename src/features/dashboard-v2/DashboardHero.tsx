@@ -180,12 +180,12 @@ export const DashboardHero: React.FC<{ id?: string; timerVariant?: string }> = (
   return (
     <section
       id={id}
-      className="relative w-full bg-[var(--bg)] text-[var(--text)] border-b border-[var(--border-subtle)] pt-9 sm:pt-12 md:pt-14 lg:pt-16 pb-4 sm:pb-5 md:pb-5 lg:pb-6 overflow-hidden scroll-mt-[128px]"
+      className="relative w-full bg-[var(--bg)] text-[var(--text)] border-b border-[var(--border-subtle)] pt-9 sm:pt-12 md:pt-14 lg:pt-16 pb-4 sm:pb-5 md:pb-5 lg:pb-6 overflow-x-clip scroll-mt-[128px]"
     >
       {/* Background 3D Circuit Outline */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-0 pointer-events-none w-full md:w-[68%] lg:w-[62%] h-full flex items-center justify-start pl-0 sm:pl-2 md:pl-4 pt-6 sm:pt-8 md:pt-10 lg:pt-12 overflow-hidden [contain:paint] [will-change:transform]"
+        className="absolute inset-0 z-0 pointer-events-none w-full md:w-[68%] lg:w-[62%] h-full flex items-center justify-start pl-0 sm:pl-2 md:pl-4 pt-6 sm:pt-8 md:pt-10 lg:pt-12 overflow-visible isolate"
       >
         <CircuitOutline
           circuitId={nextRace.Circuit?.circuitId}

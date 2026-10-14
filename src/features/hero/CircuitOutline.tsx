@@ -49,15 +49,15 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
   }
   const [sectorsVisible, setSectorsVisible] = useState(false)
   const [pathLength, setPathLength] = useState(1000)
-  const [sectorBounds, setSectorBounds] = useState({ s1: {start: 0, end: 333}, s2: {start: 333, end: 666}, s3: {start: 666, end: 1000} })
+  const [sectorBounds, setSectorBounds] = useState({ s1: { start: 0, end: 333 }, s2: { start: 333, end: 666 }, s3: { start: 666, end: 1000 } })
   const [snappedTurns, setSnappedTurns] = useState<TurnMarker[]>(info.turnsData)
   const snappedTurnsRef = useRef(info.turnsData)
   
-  const [heroStage, setHeroStage] = useState(0)
+  const [heroStage, setHeroStage] = useState(1)
 
   const pathRef = useRef<SVGPathElement>(null)
   const animFrameRef = useRef<number | null>(null)
-  const syncFrameRef = useRef<number | null>(null)
+  const elevationAnimRef = useRef<number | null>(null)
   const carOuterRef = useRef<SVGCircleElement>(null)
   const carInnerRef = useRef<SVGCircleElement>(null)
   const anchorRefs = useRef<Record<number, SVGCircleElement | null>>({})
@@ -162,6 +162,38 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       const s1End = data.s1End;
       const s2End = data.s2End;
 
+      const syncCorners = () => {
+        const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
+        if (firstPill && firstPill.parentElement) {
+          const parentRect = firstPill.parentElement.getBoundingClientRect();
+          Object.keys(anchorRefs.current).forEach(key => {
+            const num = Number(key);
+            const anchor = anchorRefs.current[num];
+            const pill = overlayPillsRef.current[num];
+            if (anchor && pill) {
+              const rect = anchor.getBoundingClientRect();
+              pill.style.left = `${rect.left - parentRect.left + rect.width / 2}px`;
+              pill.style.top = `${rect.top - parentRect.top + rect.height / 2}px`;
+            }
+          });
+        }
+      };
+
+      const animateElevationSync = () => {
+        if (elevationAnimRef.current) cancelAnimationFrame(elevationAnimRef.current);
+        const startTime = performance.now();
+        const duration = 450;
+        const tick = (now: number) => {
+          syncCorners();
+          if (now - startTime < duration) {
+            elevationAnimRef.current = requestAnimationFrame(tick);
+          } else {
+            elevationAnimRef.current = null;
+          }
+        };
+        elevationAnimRef.current = requestAnimationFrame(tick);
+      };
+
       if (shouldReduceMotion) {
         setSectorsVisible(true);
         if (carOuterRef.current && carInnerRef.current) {
@@ -173,23 +205,6 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
         }
 
         if (variant === 'hero-3d') {
-          const syncCorners = () => {
-            const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
-            if (firstPill && firstPill.parentElement) {
-              const parentRect = firstPill.parentElement.getBoundingClientRect();
-              Object.keys(anchorRefs.current).forEach(key => {
-                const num = Number(key);
-                const anchor = anchorRefs.current[num];
-                const pill = overlayPillsRef.current[num];
-                if (anchor && pill) {
-                  const rect = anchor.getBoundingClientRect();
-                  pill.style.left = `${rect.left - parentRect.left + rect.width / 2}px`;
-                  pill.style.top = `${rect.top - parentRect.top + rect.height / 2}px`;
-                }
-              });
-            }
-          };
-
           let observer: ResizeObserver | null = null;
           const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
           if (firstPill && firstPill.parentElement) {
@@ -215,26 +230,9 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       }
 
       let startLoopTime: number | null = null;
-      const loopDurationMs = variant === 'hero-3d' ? 60000 : 8000;
+      const loopDurationMs = variant === 'hero-3d' ? 45000 : 8000;
       let lastSector = -1;
       let isVisible = true;
-
-      const syncCorners = () => {
-        const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
-        if (firstPill && firstPill.parentElement) {
-          const parentRect = firstPill.parentElement.getBoundingClientRect();
-          Object.keys(anchorRefs.current).forEach(key => {
-            const num = Number(key);
-            const anchor = anchorRefs.current[num];
-            const pill = overlayPillsRef.current[num];
-            if (anchor && pill) {
-              const rect = anchor.getBoundingClientRect();
-              pill.style.left = `${rect.left - parentRect.left + rect.width / 2}px`;
-              pill.style.top = `${rect.top - parentRect.top + rect.height / 2}px`;
-            }
-          });
-        }
-      };
 
       const loopAnimation = (timestamp: number) => {
         if (!isVisible) return;
@@ -246,7 +244,8 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
         const safeProgress = Math.max(0, Math.min(1, dynamicProgress));
 
         if (pathRef.current) {
-          const pt = pathRef.current.getPointAtLength(safeProgress * len);
+          const curLen = (sfLen + safeProgress * len) % len;
+          const pt = pathRef.current.getPointAtLength(curLen);
           
           if (carOuterRef.current && carInnerRef.current) {
             carOuterRef.current.setAttribute('cx', String(pt.x));
@@ -257,7 +256,6 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
           
           if (variant === 'hero-3d') {
             let currentSector = 1;
-            const curLen = safeProgress * len;
             
             const inSector = (pos: number, start: number, end: number) => {
               if (start <= end) {
@@ -276,25 +274,24 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
             }
             
             if (currentSector !== lastSector) {
-               setHeroStage(currentSector);
-               lastSector = currentSector;
+              setHeroStage(currentSector);
+              lastSector = currentSector;
+              animateElevationSync();
             }
 
-            if (onActiveTurnChange) {
-              let closestTurn: TurnMarker | null = null;
-              let minDistance = 25;
-              snappedTurnsRef.current.forEach(turn => {
-                const dist = Math.hypot(turn.x - pt.x, turn.y - pt.y);
-                if (dist < minDistance) {
-                  minDistance = dist;
-                  closestTurn = turn;
-                }
-              });
-              const currId = activeTurnRef.current ? activeTurnRef.current.number : null;
-              const newId = closestTurn ? (closestTurn as TurnMarker).number : null;
-              if (currId !== newId) {
-                setActiveTurn(closestTurn);
+            let closestTurn: TurnMarker | null = null;
+            let minDistance = 28;
+            snappedTurnsRef.current.forEach(turn => {
+              const dist = Math.hypot(turn.x - pt.x, turn.y - pt.y);
+              if (dist < minDistance) {
+                minDistance = dist;
+                closestTurn = turn;
               }
+            });
+            const currId = activeTurnRef.current ? activeTurnRef.current.number : null;
+            const newId = closestTurn ? (closestTurn as TurnMarker).number : null;
+            if (currId !== newId) {
+              setActiveTurn(closestTurn);
             }
           }
         }
@@ -312,6 +309,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
           if (isVisible && !animFrameRef.current) {
             animFrameRef.current = requestAnimationFrame(loopAnimation);
           }
+          syncCorners();
         }, 500);
         
         const firstPill = Object.values(overlayPillsRef.current).find(Boolean);
@@ -321,7 +319,6 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
             syncCorners();
           });
           observer.observe(container);
-          // Initial coordinate calculation
           requestAnimationFrame(() => syncCorners());
         }
 
@@ -339,6 +336,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
               if (!animFrameRef.current) {
                 animFrameRef.current = requestAnimationFrame(loopAnimation);
               }
+              syncCorners();
             }
           }, { threshold: 0.05 });
           visibilityObserver.observe(rootContainerRef.current);
@@ -347,6 +345,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
         return () => { 
           clearTimeout(t1); 
           if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+          if (elevationAnimRef.current) cancelAnimationFrame(elevationAnimRef.current);
           if (observer) observer.disconnect();
           if (visibilityObserver) visibilityObserver.disconnect();
         };
@@ -384,13 +383,10 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
         };
       }
     }
-  }, [info.path, variant, circuitId, info.id, shouldReduceMotion, onActiveTurnChange])
+  }, [info.path, variant, circuitId, info.id, shouldReduceMotion])
 
   const is3D = variant === 'hero-3d'
   
-  // Parse viewBox so we can map SVG coordinates to HTML % percentages
-  const [vbMinX, vbMinY, vbWidth, vbHeight] = (info.viewBox || "0 0 1000 1000").split(' ').map(Number);
-
   const baseTrackOpacity = is3D ? 0.14 : 1
   const sectorOpacity = is3D ? 0.65 : 1
   
@@ -414,23 +410,23 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       }
       
       const createPath = (s: number, e: number, keySuffix: string) => {
-         let len = e - s;
-         if (len < 0) len += pathLength;
-         return (
-            <motion.path
-              key={keySuffix}
-              d={info.path}
-              stroke={color}
-              strokeWidth={isTop && isActive ? "5" : "4"}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray={`${len} ${pathLength}`}
-              strokeDashoffset={`-${s}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: sectorsVisible ? opacity : 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            />
-         )
+        let len = e - s;
+        if (len < 0) len += pathLength;
+        return (
+          <motion.path
+            key={keySuffix}
+            d={info.path}
+            stroke={color}
+            strokeWidth={isTop && isActive ? "5" : "4"}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={`${len} ${pathLength}`}
+            strokeDashoffset={`-${s}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: sectorsVisible ? opacity : 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          />
+        )
       };
 
       return (
@@ -445,12 +441,12 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
         >
           <svg viewBox={info.viewBox} className="w-full h-full" fill="none" style={{ overflow: 'visible' }}>
             {start <= end ? (
-               createPath(start, end, 'single')
+              createPath(start, end, 'single')
             ) : (
-               <>
-                 {createPath(start, pathLength, 'part1')}
-                 {createPath(0, end, 'part2')}
-               </>
+              <>
+                {createPath(start, pathLength, 'part1')}
+                {createPath(0, end, 'part2')}
+              </>
             )}
           </svg>
         </div>
@@ -469,7 +465,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
               align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center'
             )
       }
-      style={is3D ? { transformStyle: 'preserve-3d', willChange: 'transform', contain: 'paint' } : undefined}
+      style={is3D ? { transformStyle: 'preserve-3d', willChange: 'transform' } : undefined}
     >
       
       {variant === "card" && (
@@ -500,7 +496,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
       >
         
         {/* The aspect ratio block that controls the size */}
-        <div className={is3D ? className : "w-full"} style={is3D ? { position: 'relative', transformStyle: 'preserve-3d', transform: `perspective(800px) rotateX(${rotateX}deg) rotateZ(${rotation}deg)`, willChange: 'transform', contain: 'paint' } : { position: 'relative' }}>
+        <div className={is3D ? className : "w-full"} style={is3D ? { position: 'relative', transformStyle: 'preserve-3d', transform: `perspective(800px) rotateX(${rotateX}deg) rotateZ(${rotation}deg)`, willChange: 'transform' } : { position: 'relative' }}>
           
           {/* Dummy SVG to drive aspect ratio */}
           <svg viewBox={info.viewBox} className="w-full h-full invisible pointer-events-none" fill="none">
@@ -538,23 +534,23 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
                   <svg viewBox={info.viewBox} className="w-full h-full" fill="none" style={{ overflow: 'visible' }}>
                     {(() => {
                       const createPath = (s: number, e: number, color: string, keySuffix: string) => {
-                         let len = e - s;
-                         if (len < 0) len += pathLength;
-                         return (
-                            <motion.path
-                              key={keySuffix}
-                              d={info.path}
-                              stroke={color}
-                              strokeWidth="4"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeDasharray={`${len} ${pathLength}`}
-                              strokeDashoffset={`-${s}`}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: sectorsVisible ? sectorOpacity : 0 }}
-                              transition={{ duration: 0.4 }}
-                            />
-                         )
+                        let len = e - s;
+                        if (len < 0) len += pathLength;
+                        return (
+                          <motion.path
+                            key={keySuffix}
+                            d={info.path}
+                            stroke={color}
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeDasharray={`${len} ${pathLength}`}
+                            strokeDashoffset={`-${s}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: sectorsVisible ? sectorOpacity : 0 }}
+                            transition={{ duration: 0.4 }}
+                          />
+                        )
                       };
 
                       return (
@@ -691,7 +687,7 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
                                 <line x1={turn.x} y1={turn.y} x2={px} y2={py} stroke={sectorColor} strokeWidth="1" strokeDasharray="2 2" opacity={isHovered ? 0.9 : (isSectorActive ? 0.5 : 0.15)} />
                               )}
                               {isHovered && (
-                                <circle cx={turn.x} cy={turn.y} r="8" fill="none" stroke={sectorColor} strokeWidth="1.5" opacity="0.8" />
+                                <circle cx={turn.x} cy={turn.y} r={8} fill="none" stroke={sectorColor} strokeWidth="1.5" opacity="0.8" />
                               )}
                               <circle
                                 cx={turn.x}
@@ -785,6 +781,3 @@ export const CircuitOutline: React.FC<CircuitOutlineProps> = ({
     </div>
   )
 }
-
-
-

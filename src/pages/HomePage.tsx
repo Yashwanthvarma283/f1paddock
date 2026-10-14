@@ -23,7 +23,7 @@ export const HomePage: React.FC = () => {
           <RacingLine className="h-[16px] md:h-[24px] opacity-100" />
         </div>
 
-        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col">
+        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col dv2-section-contain">
           <LatestResultSection id="results" />
         </div>
           
@@ -31,7 +31,7 @@ export const HomePage: React.FC = () => {
           <RacingLine className="h-[16px] md:h-[24px] opacity-100" />
         </div>
 
-        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col">
+        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col dv2-section-contain">
           <CalendarSection id="calendar" />
         </div>
           
@@ -39,7 +39,7 @@ export const HomePage: React.FC = () => {
           <RacingLine className="h-[16px] md:h-[24px] opacity-100" />
         </div>
 
-        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col mb-8 md:mb-10 lg:mb-12">
+        <div className="max-w-[1560px] mx-auto w-full px-5 md:px-8 lg:px-12 flex flex-col mb-8 md:mb-10 lg:mb-12 dv2-section-contain">
           <DriversSection id="drivers" />
         </div>
       </main>

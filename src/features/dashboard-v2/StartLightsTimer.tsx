@@ -2,11 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import type { WeekendSession } from '@/api/types'
 import { cn } from '@/lib/utils'
 import { useReducedMotion } from 'motion/react'
-import {
-  DRAW_DURATION_MS,
-  getRingCycleDurationMs,
-  getGantryCycleDurationMs,
-} from './timerConstants'
+import { getGantryCycleDurationMs } from './timerConstants'
 
 
 const pad = (n: number) => String(n).padStart(2, '0')
